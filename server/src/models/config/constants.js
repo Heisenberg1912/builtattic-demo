@@ -1,10 +1,11 @@
 export const ROLES = Object.freeze({
-  SUPER_ADMIN: 'super_admin',
-  ASSOCIATE: 'associate',
+  SUPER_ADMIN: 'superadmin',
+  ADMIN: 'admin',
+  USER: 'user',
   CLIENT: 'client',
+  VENDOR: 'vendor',
   FIRM: 'firm',
-  SALE: 'sale',
-  USER: 'user'
+  ASSOCIATE: 'associate'
 });
 
 export const PERMISSIONS = Object.freeze({

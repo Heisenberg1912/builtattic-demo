@@ -4,11 +4,12 @@ import { Navigate } from "react-router-dom";
 // Role -> dashboard mapping
 const roleDashboardPath = {
   superadmin: "/dashboard/super-admin",
-  user: "/dashboard/user",
-  associate: "/dashboard/associate",
+  admin: "/dashboard/admin",
+  vendor: "/dashboard/vendor",
   firm: "/dashboard/firm",
+  associate: "/dashboard/associate",
   client: "/dashboard/client",
-  sale: "/dashboard/sale",
+  user: "/dashboard/user",
 };
 
 const ProtectedRoute = ({ allowRoles = [], auth, children }) => {

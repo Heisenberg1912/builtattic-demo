@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Search,
@@ -9,10 +9,10 @@ import {
   UserCog,
   LayoutDashboard,
   Plus,
-  MoreVertical,
   Menu,
   X,
 } from "lucide-react";
+import { fetchAdminUsers, fetchCatalog, fetchFirms } from "../../services/marketplace.js";
 
 // Sidebar config
 const sidebarItems = [
@@ -21,16 +21,113 @@ const sidebarItems = [
   { id: "Associates", label: "Associates", icon: <UserCog size={18} /> },
   { id: "Firms", label: "Firms", icon: <Building2 size={18} /> },
   { id: "Clients", label: "Clients", icon: <Briefcase size={18} /> },
-  { id: "Sales", label: "Sales", icon: <ShoppingCart size={18} /> },
+  { id: "Marketplace", label: "Marketplace", icon: <ShoppingCart size={18} /> },
 ];
+
+const formatCurrency = (amount, currency = "USD") => {
+  const value = Number(amount);
+  if (!Number.isFinite(value)) return "—";
+  try {
+    return new Intl.NumberFormat(undefined, {
+      style: "currency",
+      currency,
+      maximumFractionDigits: 2,
+    }).format(value);
+  } catch {
+    return `${value.toLocaleString()} ${currency}`;
+  }
+};
+
+const formatDate = (input) => {
+  if (!input) return "—";
+  const d = new Date(input);
+  if (Number.isNaN(d.getTime())) return "—";
+  return d.toLocaleDateString(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
+};
+
+const resolveUserRole = (user) => {
+  if (!user) return "User";
+  const globals = user.rolesGlobal || [];
+  if (globals.includes("superadmin")) return "Super Admin";
+  if (globals.includes("admin")) return "Admin";
+  const membershipRole = user.memberships?.[0]?.role;
+  if (membershipRole === "owner" || membershipRole === "admin") return "Vendor";
+  if (membershipRole === "associate") return "Associate";
+  return user.isClient === false ? "User" : "Client";
+};
 
 export default function SuperAdminDashboard({ onLogout }) {
   const [search, setSearch] = useState("");
   const [activeView, setActiveView] = useState("Dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [dataState, setDataState] = useState({
+    loading: true,
+    products: [],
+    firms: [],
+    users: [],
+    error: null,
+  });
   const navigate = useNavigate();
 
   const normalizedSearch = search.trim().toLowerCase();
+  const dashboardStats = useMemo(() => {
+    const totalRevenue = dataState.products.reduce(
+      (sum, item) => sum + Number(item.price || 0),
+      0
+    );
+    const publishedProducts = dataState.products.filter(
+      (item) => item.status === "published"
+    );
+    const categories = new Set(
+      dataState.products.flatMap((p) => p.categories || [])
+    );
+    return {
+      totalUsers: dataState.users.length,
+      totalFirms: dataState.firms.length,
+      totalProducts: dataState.products.length,
+      publishedProducts: publishedProducts.length,
+      totalRevenue,
+      categories: Array.from(categories),
+    };
+  }, [dataState]);
+
+  useEffect(() => {
+    let isMounted = true;
+    const load = async () => {
+      setDataState((prev) => ({ ...prev, loading: true, error: null }));
+      try {
+        const [products, firms, users] = await Promise.all([
+          fetchCatalog(),
+          fetchFirms(),
+          fetchAdminUsers(),
+        ]);
+        if (!isMounted) return;
+        setDataState({
+          loading: false,
+          products,
+          firms,
+          users,
+          error: null,
+        });
+      } catch (err) {
+        console.error("Failed to load admin dashboard data", err);
+        if (!isMounted) return;
+        setDataState((prev) => ({
+          ...prev,
+          loading: false,
+          error: err?.message || "Unable to load dashboard data",
+        }));
+      }
+    };
+    load();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const handleSearchKey = (e) => {
     if (e.key === "Enter" && normalizedSearch) {
@@ -43,6 +140,16 @@ export default function SuperAdminDashboard({ onLogout }) {
         // optional: keep search text so lists remain filtered
       }
     }
+  };
+
+  const viewProps = {
+    search: normalizedSearch,
+    products: dataState.products,
+    firms: dataState.firms,
+    users: dataState.users,
+    loading: dataState.loading,
+    error: dataState.error,
+    stats: dashboardStats,
   };
 
   const handleLogout = () => {
@@ -59,12 +166,12 @@ export default function SuperAdminDashboard({ onLogout }) {
 
   const renderContent = () => {
     switch (activeView) {
-      case "Users": return <UsersView search={normalizedSearch} />;
-      case "Associates": return <AssociatesView search={normalizedSearch} />;
-      case "Firms": return <FirmsView search={normalizedSearch} />;
-      case "Clients": return <ClientsView search={normalizedSearch} />;
-      case "Sales": return <SalesView search={normalizedSearch} />;
-      default: return <DashboardView />;
+      case "Users": return <UsersView {...viewProps} />;
+      case "Associates": return <AssociatesView {...viewProps} />;
+      case "Firms": return <FirmsView {...viewProps} />;
+      case "Clients": return <ClientsView {...viewProps} />;
+      case "Marketplace": return <MarketplaceView {...viewProps} />;
+      default: return <DashboardView {...viewProps} />;
     }
   };
 
@@ -162,153 +269,277 @@ export default function SuperAdminDashboard({ onLogout }) {
 //
 // --- Views ---
 //
-function DashboardView() {
+function DashboardView({ stats, products, loading, error }) {
+  const cards = [
+    {
+      key: "users",
+      icon: <Users />,
+      title: "Users",
+      description: loading ? "Loading…" : `${stats?.totalUsers ?? 0} total users`,
+    },
+    {
+      key: "firms",
+      icon: <Building2 />,
+      title: "Firms",
+      description: loading ? "Loading…" : `${stats?.totalFirms ?? 0} partner firms`,
+    },
+    {
+      key: "products",
+      icon: <ShoppingCart />,
+      title: "Published Listings",
+      description: loading ? "Loading…" : `${stats?.publishedProducts ?? 0} live products`,
+    },
+    {
+      key: "revenue",
+      icon: <DollarSign />,
+      title: "Potential Revenue",
+      description: loading
+        ? "Loading…"
+        : formatCurrency(stats?.totalRevenue ?? 0, products[0]?.currency || "USD"),
+    },
+    {
+      key: "categories",
+      icon: <Briefcase />,
+      title: "Categories",
+      description: loading
+        ? "Loading…"
+        : `${stats?.categories?.length ?? 0} active categories`,
+    },
+  ];
+
+  const latestProducts = products.slice(0, 5);
+
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-      <DashboardCard icon={<Users />} title="Users" description="1,245 total users" />
-      <DashboardCard icon={<UserCog />} title="Associates" description="320 active associates" />
-      <DashboardCard icon={<Building2 />} title="Firms" description="56 partner firms" />
-      <DashboardCard icon={<Briefcase />} title="Clients" description="480 clients" />
-      <DashboardCard icon={<ShoppingCart />} title="Sales" description="$1.2M total sales" />
-    </div>
+    <>
+      {error && (
+        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {error}
+        </div>
+      )}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+        {cards.map((card) => (
+          <DashboardCard
+            key={card.key}
+            icon={card.icon}
+            title={card.title}
+            description={card.description}
+          />
+        ))}
+      </div>
+
+      <section className="mt-8">
+        <h2 className="text-xl font-semibold mb-4">Latest Marketplace Listings</h2>
+        <div className="bg-white border border-gray-200 rounded-xl divide-y">
+          {loading ? (
+            <div className="px-4 py-6 text-sm text-gray-500">Loading listings…</div>
+          ) : latestProducts.length === 0 ? (
+            <div className="px-4 py-6 text-sm text-gray-500">
+              No listings available yet. Seed data to see products here.
+            </div>
+          ) : (
+            latestProducts.map((product) => (
+              <div key={product._id || product.slug} className="px-4 py-4 flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+                <div>
+                  <p className="font-medium text-gray-900">{product.title}</p>
+                  <p className="text-sm text-gray-500">{product.description}</p>
+                </div>
+                <div className="flex items-center gap-4 text-sm">
+                  <span className="font-semibold text-gray-800">
+                    {formatCurrency(product.price || 0, product.currency || "USD")}
+                  </span>
+                  <StatusBadge status={(product.status || "draft").replace(/^\w/, (c) => c.toUpperCase())} />
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </section>
+    </>
   );
 }
 
-function UsersView({ search }) {
-  const users = [
-    { name: "John Doe", email: "john@example.com", role: "Client", status: "Active" },
-    { name: "Alex Ray", email: "alex@example.com", role: "Associate", status: "Active" },
-    { name: "BuildCorp", email: "contact@buildcorp.com", role: "Firm", status: "Inactive" },
-  ];
-  const filtered = !search
-    ? users
-    : users.filter(u =>
-        [u.name, u.email, u.role, u.status].some(v =>
-          v.toLowerCase().includes(search)
-        )
-      );
+function UsersView({ search, users, loading }) {
+  const filtered = (users || []).filter((user) => {
+    if (!search) return true;
+    const values = [
+      user.email,
+      resolveUserRole(user),
+      user.memberships?.map((m) => m.role).join(", "),
+    ].filter(Boolean);
+    return values.some((value) =>
+      String(value).toLowerCase().includes(search)
+    );
+  });
+
   return (
-    <Section title="User Management" actionLabel="Add User">
-      <Table
-        headers={["Name", "Role", "Status", ""]} 
-        rows={filtered.map((u) => [
-          <span>
-            {u.name}
-            <br />
-            <span className="text-gray-400">{u.email}</span>
-          </span>,
-            u.role,
-            <StatusBadge status={u.status} />,
-            <button><MoreVertical size={16} /></button>,
-        ])}
-      />
-      {filtered.length === 0 && <EmptySearchNotice term={search} />}
+    <Section title="User Management">
+      {loading ? (
+        <div className="text-sm text-gray-500">Loading user list…</div>
+      ) : filtered.length === 0 ? (
+        <EmptySearchNotice term={search} />
+      ) : (
+        <Table
+          headers={["Email", "Role", "Joined"]}
+          rows={filtered.map((user) => [
+            <span>
+              {user.email}
+              <br />
+              <span className="text-gray-400">
+                {user.memberships?.length
+                  ? `${user.memberships.length} membership${user.memberships.length > 1 ? "s" : ""}`
+                  : "No memberships"}
+              </span>
+            </span>,
+            resolveUserRole(user),
+            formatDate(user.createdAt),
+          ])}
+        />
+      )}
     </Section>
   );
 }
 
-function AssociatesView({ search }) {
-  const associates = [
-    { name: "Alex Ray", spec: "Plumber", rating: "4.8/5", jobs: 12 },
-    { name: "Jane Poe", spec: "Architect", rating: "4.9/5", jobs: 8 },
-    { name: "Sam Wilson", spec: "Electrician", rating: "4.7/5", jobs: 21 },
-  ];
-  const filtered = !search
-    ? associates
-    : associates.filter(a =>
-        [a.name, a.spec, a.rating].some(v => v.toLowerCase().includes(search))
-      );
+function AssociatesView({ search, users, loading }) {
+  const associates = (users || []).filter((user) =>
+    user.memberships?.some((m) => m.role === "associate")
+  );
+  const filtered = associates.filter((associate) => {
+    if (!search) return true;
+    return associate.email.toLowerCase().includes(search);
+  });
+
   return (
     <Section title="Associates">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {filtered.map((a) => (
-          <div key={a.name} className="bg-white border rounded-lg p-4">
-            <h3 className="font-semibold">{a.name}</h3>
-            <p className="text-sm text-gray-500">{a.spec}</p>
-            <div className="flex justify-between items-center mt-4 text-sm">
-              <span>⭐ {a.rating}</span>
-              <span>{a.jobs} jobs</span>
+      {loading ? (
+        <div className="text-sm text-gray-500">Loading associates…</div>
+      ) : filtered.length === 0 ? (
+        <div className="text-sm text-gray-500">
+          {associates.length === 0
+            ? "No associates onboarded yet."
+            : `No associates found for “${search}”.`}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filtered.map((associate) => (
+            <div key={associate._id} className="bg-white border rounded-lg p-4">
+              <h3 className="font-semibold">{associate.email}</h3>
+              <p className="text-sm text-gray-500">
+                {associate.memberships
+                  ?.filter((m) => m.role === "associate")
+                  .map((m) => `Firm #${m.firm}`)
+                  .join(", ") || "Marketplace Associate"}
+              </p>
             </div>
-          </div>
-        ))}
-      </div>
-      {filtered.length === 0 && <EmptySearchNotice term={search} />}
+          ))}
+        </div>
+      )}
     </Section>
   );
 }
 
-function FirmsView({ search }) {
-  const firms = [
-    { name: "BuildCorp Ltd", location: "New York, USA", status: "Verified" },
-    { name: "DesignPro", location: "London, UK", status: "Verified" },
-    { name: "UrbanBuild Co.", location: "Tokyo, Japan", status: "Pending" },
-  ];
-  const filtered = !search
-    ? firms
-    : firms.filter(f =>
-        [f.name, f.location, f.status].some(v => v.toLowerCase().includes(search))
-      );
+function FirmsView({ search, firms, loading }) {
+  const filtered = (firms || []).filter((firm) => {
+    if (!search) return true;
+    return [firm.name, firm.slug, firm.ownerUserId]
+      .filter(Boolean)
+      .some((value) => String(value).toLowerCase().includes(search));
+  });
+
   return (
     <Section title="Firms">
-      <div className="space-y-3">
-        {filtered.map((f) => (
-          <div key={f.name} className="flex justify-between items-center p-4 bg-gray-50 rounded-lg border">
-            <div>
-              <h3 className="font-semibold">{f.name}</h3>
-              <p className="text-sm text-gray-500">{f.location}</p>
+      {loading ? (
+        <div className="text-sm text-gray-500">Loading firms…</div>
+      ) : filtered.length === 0 ? (
+        <EmptySearchNotice term={search} />
+      ) : (
+        <div className="space-y-3">
+          {filtered.map((firm) => (
+            <div
+              key={firm._id}
+              className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 p-4 bg-gray-50 rounded-lg border"
+            >
+              <div>
+                <h3 className="font-semibold">{firm.name}</h3>
+                <p className="text-sm text-gray-500">Slug: {firm.slug}</p>
+                <p className="text-xs text-gray-400">
+                  Owner: {firm.ownerUserId || "Unassigned"}
+                </p>
+              </div>
+              <StatusBadge status={firm.approved ? "Verified" : "Pending"} />
             </div>
-            <StatusBadge status={f.status} />
-          </div>
-        ))}
-      </div>
-      {filtered.length === 0 && <EmptySearchNotice term={search} />}
+          ))}
+        </div>
+      )}
     </Section>
   );
 }
 
-function ClientsView({ search }) {
-  const clients = [
-    { name: "Sarah Connor", spent: "$8,750", orders: 15 },
-    { name: "Mike Vance", spent: "$12,300", orders: 21 },
-    { name: "Lisa Ray", spent: "$5,100", orders: 8 },
-  ];
-  const filtered = !search
-    ? clients
-    : clients.filter(c => c.name.toLowerCase().includes(search));
+function ClientsView({ search, users, loading }) {
+  const clients = (users || []).filter((user) => user.isClient !== false);
+  const filtered = clients.filter((client) => {
+    if (!search) return true;
+    return client.email.toLowerCase().includes(search);
+  });
+
   return (
     <Section title="Clients">
-      <Table
-        headers={["Name", "Total Spent", "Orders"]}
-        rows={filtered.map((c) => [c.name, c.spent, c.orders])}
-      />
-      {filtered.length === 0 && <EmptySearchNotice term={search} />}
+      {loading ? (
+        <div className="text-sm text-gray-500">Loading clients…</div>
+      ) : filtered.length === 0 ? (
+        <div className="text-sm text-gray-500">
+          {clients.length === 0
+            ? "No clients have registered yet."
+            : `No clients found for “${search}”.`}
+        </div>
+      ) : (
+        <Table
+          headers={["Email", "Type", "Joined"]}
+          rows={filtered.map((client) => [
+            client.email,
+            resolveUserRole(client),
+            formatDate(client.createdAt),
+          ])}
+        />
+      )}
     </Section>
   );
 }
 
-function SalesView({ search }) {
-  const sales = [
-    { id: "#TXN101", amount: "$1,200", status: "Completed" },
-    { id: "#TXN102", amount: "$2,500", status: "Pending" },
-    { id: "#TXN103", amount: "$800", status: "Completed" },
-  ];
-  const filtered = !search
-    ? sales
-    : sales.filter(s =>
-        [s.id, s.amount, s.status].some(v => v.toLowerCase().includes(search))
-      );
+function MarketplaceView({ search, products, loading }) {
+  const filtered = (products || []).filter((product) => {
+    if (!search) return true;
+    return [product.title, product.slug, product.status]
+      .filter(Boolean)
+      .some((value) => String(value).toLowerCase().includes(search));
+  });
+
   return (
-    <Section title="Sales & Transactions">
-      <ul className="space-y-3">
-        {filtered.map((s) => (
-          <li key={s.id} className="flex justify-between items-center text-sm bg-white p-3 rounded-lg border">
-            <p className="font-medium">{s.id}</p>
-            <p>{s.amount}</p>
-            <StatusBadge status={s.status} />
-          </li>
-        ))}
-      </ul>
-      {filtered.length === 0 && <EmptySearchNotice term={search} />}
+    <Section title="Marketplace Listings">
+      {loading ? (
+        <div className="text-sm text-gray-500">Loading listings…</div>
+      ) : filtered.length === 0 ? (
+        <EmptySearchNotice term={search} />
+      ) : (
+        <ul className="space-y-3">
+          {filtered.map((product) => (
+            <li
+              key={product._id || product.slug}
+              className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 text-sm bg-white p-4 rounded-lg border"
+            >
+              <div>
+                <p className="font-medium text-gray-900">{product.title}</p>
+                <p className="text-gray-500">{product.slug}</p>
+              </div>
+              <div className="flex items-center gap-4">
+                <span className="font-semibold text-gray-800">
+                  {formatCurrency(product.price || 0, product.currency || "USD")}
+                </span>
+                <StatusBadge status={(product.status || "draft").replace(/^\w/, (c) => c.toUpperCase())} />
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
     </Section>
   );
 }
@@ -390,6 +621,8 @@ function StatusBadge({ status }) {
     Inactive: "bg-red-100 text-red-700",
     Pending: "bg-yellow-100 text-yellow-700",
     Verified: "bg-blue-100 text-blue-700",
+    Published: "bg-green-100 text-green-700",
+    Draft: "bg-gray-200 text-gray-700",
   };
   return (
     <span className={`px-2 py-1 text-xs rounded-full ${styles[status] || "bg-gray-100 text-gray-700"}`}>

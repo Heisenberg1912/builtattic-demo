@@ -28,18 +28,20 @@ import UserDashboard from "./pages/dashboard/UserDashboard";
 import AssociateDashboard from "./pages/dashboard/AssociateDashboard";
 import FirmDashboard from "./pages/dashboard/FirmDashboard";
 import ClientDashboard from "./pages/dashboard/ClientDashboard";
-import SaleDashboard from "./pages/dashboard/SaleDashboard";
+import VendorDashboard from "./pages/dashboard/SaleDashboard";
+import AdminDashboard from "./pages/dashboard/AdminDashboard";
 import StudioDetail from "./pages/StudioDetail";
 import RegistrStrip from "./components/registrstrip";
 
 // Single shared map & export (avoid redefining later)
 export const roleDashboardPath = {
   superadmin: "/dashboard/super-admin",
+  admin: "/dashboard/admin",
   user: "/dashboard/user",
   associate: "/dashboard/associate",
   firm: "/dashboard/firm",
   client: "/dashboard/client",
-  sale: "/dashboard/sale",
+  vendor: "/dashboard/vendor",
 };
 
 const App = () => {
@@ -177,11 +179,12 @@ const App = () => {
             <Route path="/profile" element={<Profile />} />
             {/* Dashboard routes */}
             <Route path="/dashboard/super-admin" element={<SuperAdminDashboard />} />
+            <Route path="/dashboard/admin" element={<AdminDashboard />} />
             <Route path="/dashboard/user" element={<UserDashboard />} />
             <Route path="/dashboard/associate" element={<AssociateDashboard />} />
             <Route path="/dashboard/firm" element={<FirmDashboard />} />
             <Route path="/dashboard/client" element={<ClientDashboard />} />
-            <Route path="/dashboard/sale" element={<SaleDashboard />} />
+            <Route path="/dashboard/vendor" element={<VendorDashboard />} />
             {/*  */}
             <Route path="/studioDetail" element={<StudioDetail />} />
             <Route path="/studio/:id" element={<StudioDetail />} />
@@ -200,3 +203,5 @@ const App = () => {
 };
 
 export default App;
+
+

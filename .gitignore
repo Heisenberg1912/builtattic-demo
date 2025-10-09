@@ -1,5 +1,7 @@
 node_modules/
 dist/
-.next/
-.env*
+build/
+.env
+.env.*
+.vscode/
 .DS_Store

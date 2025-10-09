@@ -13,13 +13,13 @@ import {
 
 const sidebarItems = [
   { id: "overview", label: "Overview", icon: <TrendingUp size={18} /> },
-  { id: "transactions", label: "Transactions", icon: <ShoppingCart size={18} /> },
-  { id: "inventory", label: "Inventory", icon: <Package size={18} /> },
+  { id: "transactions", label: "Orders", icon: <ShoppingCart size={18} /> },
+  { id: "inventory", label: "Portfolio", icon: <Package size={18} /> },
   { id: "revenue", label: "Revenue", icon: <DollarSign size={18} /> },
   { id: "notifications", label: "Notifications", icon: <Bell size={18} /> },
 ];
 
-export default function SaleDashboard() {
+export default function VendorDashboard() {
   const [activeView, setActiveView] = useState("overview");
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -50,7 +50,7 @@ export default function SaleDashboard() {
         ${sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}`}
       >
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-xl font-semibold">Sales</h1>
+          <h1 className="text-xl font-semibold">Vendor</h1>
           <button className="md:hidden" onClick={() => setSidebarOpen(false)}>
             <X size={20} />
           </button>
@@ -113,10 +113,10 @@ function OverviewView() {
   return (
     <>
       <section className="mb-8">
-        <h2 className="text-2xl font-bold mb-4">Sales Overview</h2>
+        <h2 className="text-2xl font-bold mb-4">Marketplace Overview</h2>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard icon={<DollarSign />} label="Revenue" value="$120,500" />
-          <StatCard icon={<ShoppingCart />} label="Total Sales" value="450" />
+          <StatCard icon={<ShoppingCart />} label="Total Orders" value="450" />
           <StatCard icon={<TrendingUp />} label="Profit Margin" value="18%" />
           <StatCard icon={<Package />} label="Materials Sold" value="3,700" />
         </div>
@@ -130,7 +130,7 @@ function OverviewView() {
                 <li key={t.id} className="flex justify-between items-center">
                   <div>
                     <p className="font-medium">{t.material}</p>
-                    <p className="text-gray-500">{t.client} â€” {t.id}</p>
+                    <p className="text-gray-500">{t.client} — {t.id}</p>
                   </div>
                   <span
                     className={`text-xs px-3 py-1 rounded-xl font-semibold ${
@@ -334,3 +334,6 @@ function StatCard({ icon, label, value }) {
     </div>
   );
 }
+
+
+

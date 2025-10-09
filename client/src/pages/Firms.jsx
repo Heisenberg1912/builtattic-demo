@@ -1,274 +1,291 @@
-import React, { useState } from "react";
-import Footer from "/src/components/Footer.jsx";
-import { useNavigate } from "react-router-dom";
+import React, { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import tech_corp from "/src/assets/firms/tech_corp.avif";
-import global_finance_tower from "/src/assets/firms/global_finance_tower.avif";
-import innovation_hub from "/src/assets/firms/innovation_hub.avif";
-import metro_business from "/src/assets/firms/metro_business.avif";
-import healthcare from "/src/assets/firms/healthcare.avif";
-import cultural_center from "/src/assets/firms/cultural_center.avif";
-import gov from "/src/assets/firms/gov.jpeg";
-import Commercial from "/src/assets/category_icon/commercial.avif";
-import residential from "/src/assets/category_icon/residential.avif";
-import mixed_use from "/src/assets/category_icon/mixed_use.avif";
-import institutional from "/src/assets/category_icon/institutional.avif";
-import industrial from "/src/assets/category_icon/industrial.avif"; 
-import agricultural from "/src/assets/category_icon/agricultural.avif";
-import recreational from "/src/assets/category_icon/recreational.avif";
-import infrastructural from "/src/assets/category_icon/infrastructural.avif";
-import all from "/src/assets/category_icon/all.avif";
+import Footer from "../components/Footer";
 import RegistrStrip from "../components/registrstrip";
+import { marketplaceFeatures } from "../data/marketplace.js";
+import { fetchMarketplaceFirms } from "../services/marketplace.js";
 
-import {
-  FiHome,
-  FiBriefcase,
-  FiLayers,
-  FiBookOpen,
-  FiSettings,
-  FiMap,
-  FiAward,
-  FiGrid,
-  FiSearch,
-} from "react-icons/fi";
-
-// Blocks (sample data)
-const blocks = [
-  {
-    id: 1,
-    title: "TechCorp Headquarters",
-    studio: "Foster + Partners, USA",
-    cover: tech_corp,
-    price: "$25.00 per sq. ft",
-    details: "Commercial; 5000; Urban; 20",
-    features: "Smart Offices + Green Roof + Auditorium",
-    category: "Commercial",
-    style: "Modernism",
-    logo: "https://cdn-icons-png.flaticon.com/512/3068/3068200.png",
-  },
-  {
-    id: 2,
-    title: "Global Finance Tower",
-    studio: "Skidmore, Owings & Merrill, UK",
-    cover: global_finance_tower,
-    price: "$32.00 per sq. ft",
-    details: "Commercial; 8000; CBD; 35",
-    features: "Trading Floors + Conference Halls + Sky Lounge",
-    category: "Commercial",
-    style: "International Style",
-    logo: "https://cdn-icons-png.flaticon.com/512/3068/3068200.png",
-  },
-  {
-    id: 3,
-    title: "Innovation Hub",
-    studio: "BIG Architects, Denmark",
-    cover: innovation_hub,
-    price: "$18.50 per sq. ft",
-    details: "Institutional; 3000; Tech Park; 6",
-    features: "Open Labs + Co-working + Solar Energy",
-    category: "Institutional",
-    style: "Neo-Futurism",
-    logo: "https://cdn-icons-png.flaticon.com/512/3068/3068200.png",
-  },
-  {
-    id: 4,
-    title: "Industrial Park",
-    studio: "Perkins & Will, Canada",
-    cover:
-      "https://images.unsplash.com/photo-1503387762-592deb58ef4e?w=800&auto=format",
-    price: "$12.25 per sq. ft",
-    details: "Industrial; 6000; Outskirts; 8",
-    features: "Warehouses + Logistics Hubs + Power Backup",
-    category: "Industrial",
-    style: "Brutalism",
-    logo: "https://cdn-icons-png.flaticon.com/512/3068/3068200.png",
-  },
-  {
-    id: 5,
-    title: "Cultural Center",
-    studio: "OMA, Greece",
-    cover: cultural_center,
-    price: "$16.40 per sq. ft",
-    details: "Institutional; 2200; Coastal; 4",
-    features: "Theater + Exhibition Halls + Public Plaza",
-    category: "Institutional",
-    style: "Classical",
-    logo: "https://cdn-icons-png.flaticon.com/512/3068/3068200.png",
-  },
-];
-
-// Categories
-const categories = [
-  { icon: <img src={residential} alt="Residential" className="w-8 h-8" />, label: "Residential" },
-  { icon: <img src={Commercial} alt="Commercial" className="w-8 h-8" />, label: "Commercial" },
-  { icon: <img src={mixed_use} alt="Mixed-Use" className="w-8 h-8" />, label: "Mixed-Use" },
-  { icon: <img src={institutional} alt="Institutional" className="w-8 h-8" />, label: "Institutional" },
-  { icon: <img src={industrial} alt="Industrial" className="w-8 h-8" />, label: "Industrial" },
-  { icon: <img src={agricultural} alt="Agricultural" className="w-8 h-8" />, label: "Agricultural" },
-  { icon: <img src={recreational} alt="Recreational" className="w-8 h-8" />, label: "Recreational" },
-  { icon: <img src={infrastructural} alt="Infrastructure" className="w-8 h-8" />, label: "Infrastructure" },
-  { icon: <img src={all} alt="All" className="w-8 h-8" />, label: "All" },
-];
-
-
-// Styles
-const styles = [
-  "Classical",
-  "Gothic",
-  "Renaissance",
-  "Baroque",
-  "Neoclassical",
-  "Victorian",
-  "Beaux-Arts",
-  "Art Nouveau",
-  "Art Deco",
-  "Modernism",
-  "Bauhaus",
-  "International Style",
-  "Mid-Century Modern",
-  "Brutalism",
-  "Postmodernism",
-  "Deconstructivism",
-  "Minimalism",
-  "Neo-Futurism",
-  "Bohemian",
-  "Industrial",
-  "Eco-architecture",
-];
-
-const Urban = () => {
-  const navigate = useNavigate();
+const Firms = () => {
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [selectedStyle, setSelectedStyle] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
+  const [firms, setFirms] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // Filter logic
-  const filteredBlocks = blocks.filter((block) => {
-    const matchCategory =
-      selectedCategory === "All" || block.category === selectedCategory;
-    const matchStyle = selectedStyle === "All" || block.style === selectedStyle;
-    const matchSearch = block.title
-      .toLowerCase()
-      .includes(searchQuery.toLowerCase());
-    return matchCategory && matchStyle && matchSearch;
-  });
+  useEffect(() => {
+    let cancelled = false;
+    async function loadFirms() {
+      setLoading(true);
+      setError(null);
+      try {
+        const items = await fetchMarketplaceFirms();
+        if (!cancelled) {
+          setFirms(items);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError(err?.message || "Unable to load firms right now.");
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    }
+    loadFirms();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
-  const handleBlockClick = (block) => {
-    const params = new URLSearchParams(block).toString();
-    window.open(`${window.location.origin}/firmportfolio?${params}`, "_blank");
-  };
+  const categories = useMemo(() => {
+    const unique = new Set(firms.map((firm) => firm.category).filter(Boolean));
+    return ["All", ...unique];
+  }, [firms]);
+
+  const styles = useMemo(() => {
+    const unique = new Set(
+      firms.flatMap((firm) => firm.styles || []).filter(Boolean)
+    );
+    return ["All", ...unique];
+  }, [firms]);
+
+  const filteredFirms = useMemo(() => {
+    return firms.filter((firm) => {
+      const matchesCategory =
+        selectedCategory === "All" || firm.category === selectedCategory;
+      const matchesStyle =
+        selectedStyle === "All" || (firm.styles || []).includes(selectedStyle);
+      const matchesSearch =
+        !searchQuery ||
+        firm.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        firm.tagline?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        firm.description?.toLowerCase().includes(searchQuery.toLowerCase());
+      return matchesCategory && matchesStyle && matchesSearch;
+    });
+  }, [firms, selectedCategory, selectedStyle, searchQuery]);
 
   return (
-    <>
+    <div className="min-h-screen bg-slate-50 text-slate-900">
       <RegistrStrip />
-      <div className="bg-white text-[#1D1D1F] min-h-screen p-6 sm:p-8 lg:p-12 font-sans">
-        <div className="max-w-[1700px] mx-auto">
-          {/* Category Row */}
-          <div className="flex flex-wrap justify-center gap-8 mb-6">
-            {categories.map((cat) => (
+      <header className="bg-white border-b border-slate-200">
+        <div className="max-w-6xl mx-auto px-4 py-12 text-center">
+          <p className="uppercase tracking-[0.35em] text-xs text-slate-400 mb-4">
+            studio partners
+          </p>
+          <h1 className="text-3xl sm:text-5xl font-semibold text-slate-900 mb-4">
+            Verified architecture & design firms
+          </h1>
+          <p className="text-base sm:text-lg text-slate-600 max-w-3xl mx-auto">
+            Engage partners with proven delivery across housing, mixed-use,
+            hospitality, and civic programmes. Every firm ships packaged
+            deliverables, documentation, and on-call associate talent.
+          </p>
+        </div>
+      </header>
+
+      <main className="max-w-6xl mx-auto px-4 py-10 space-y-10">
+        <section className="flex flex-col lg:flex-row lg:items-center gap-4">
+          <div className="flex flex-wrap gap-2">
+            {categories.map((category) => (
               <button
-                key={cat.label}
-                onClick={() => setSelectedCategory(cat.label === "All" ? "All" : cat.label)}
-                className={`flex flex-col items-center min-w-[80px] transition ${
-                  selectedCategory === cat.label ? "text-black" : "text-gray-500"
+                key={category}
+                onClick={() => setSelectedCategory(category)}
+                className={`px-4 py-2 rounded-full text-sm transition ${
+                  selectedCategory === category
+                    ? "bg-slate-900 text-white"
+                    : "bg-white border border-slate-200 text-slate-600 hover:border-slate-300"
                 }`}
               >
-                <div className="mb-1">{cat.icon}</div>
-                <span className="text-xs">{cat.label}</span>
+                {category}
               </button>
             ))}
           </div>
-          <hr className="my-2" />
-
-          {/* Filter/Search Row */}
-          <div className="flex flex-wrap gap-4 items-center mb-8">
-            {/* Style Dropdown */}
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 flex-1">
             <select
               value={selectedStyle}
-              onChange={(e) => setSelectedStyle(e.target.value)}
-              className="border rounded-lg px-3 py-2 text-sm min-w-[200px]"
+              onChange={(event) => setSelectedStyle(event.target.value)}
+              className="border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-200"
             >
-              <option value="All">Filter by Style (All)</option>
               {styles.map((style) => (
                 <option key={style} value={style}>
                   {style}
                 </option>
               ))}
             </select>
-
-            {/* Search */}
             <input
-              type="text"
-              placeholder="Search for your favorite firm"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="flex-1 border rounded-lg px-3 py-2 text-sm min-w-[260px]"
+              onChange={(event) => setSearchQuery(event.target.value)}
+              placeholder="Search firms, services, or cities..."
+              className="flex-1 bg-white border border-slate-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-slate-200"
             />
-
-            {/* Sort */}
-            <select className="border rounded-lg px-3 py-2 text-sm min-w-[160px]">
-              <option>Sort by</option>
-              <option>Price: Low to High</option>
-              <option>Price: High to Low</option>
-              <option>Newest</option>
-            </select>
           </div>
+        </section>
 
-          {/* Grid of Firms */}
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-12 px-6">
-            {filteredBlocks.length > 0 ? (
-              filteredBlocks.map((block, index) => (
-                <motion.div
-                  key={block.id}
-                  onClick={() => handleBlockClick(block)}
-                  className="cursor-pointer bg-white rounded-xl overflow-hidden transform transition duration-300 hover:scale-[1.01] hover:shadow-2xl"
-                  initial={{ opacity: 0, y: 40 }}
+        {error && (
+          <div className="bg-rose-50 border border-rose-200 text-rose-700 rounded-xl px-4 py-3 text-sm">
+            {error}
+          </div>
+        )}
+
+        {loading && (
+          <div className="bg-white border border-slate-200 rounded-xl p-8 text-center text-slate-500">
+            Loading firms…
+          </div>
+        )}
+
+        <section className="grid gap-6 md:grid-cols-2">
+          {!loading &&
+            filteredFirms.map((firm) => {
+              const studioCount = firm.featuredStudios?.length ?? 0;
+              return (
+                <motion.article
+                  key={firm._id}
+                  initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.6, delay: index * 0.1 }}
+                  className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition"
                 >
-                  {/* Top row */}
-                  <div className="flex items-center justify-between px-4 pt-4">
-                    <div>
-                      <h2 className="text-lg font-bold">{block.title}</h2>
-                      <p className="text-sm text-gray-500">{block.studio}</p>
-                    </div>
+                  {firm.coverImage && (
                     <img
-                      src={block.logo}
-                      alt="Logo"
-                      className="w-10 h-10 object-contain"
+                      src={firm.coverImage}
+                      alt={firm.name}
+                      className="h-48 w-full object-cover"
+                      loading="lazy"
                     />
-                  </div>
-
-                  {/* Cover */}
-                  <div className="relative w-full aspect-[21/9] mt-3">
-                    <img
-                      src={block.cover}
-                      alt={block.title}
-                      className="absolute rounded-lg inset-0 w-full h-full object-cover"
-                    />
-                  </div>
-
-                  {/* Details */}
-                  <div className="p-5">
-                    <div className="text-gray-800 font-semibold">
-                      {block.price}
+                  )}
+                  <div className="p-5 space-y-5">
+                    <div className="flex items-center gap-3">
+                      {firm.gallery?.[0] && (
+                        <img
+                          src={firm.gallery[0]}
+                          alt={`${firm.name} thumbnail`}
+                          className="w-12 h-12 rounded-full border border-slate-200 object-cover"
+                          loading="lazy"
+                        />
+                      )}
+                      <div>
+                        <p className="uppercase tracking-[0.35em] text-xs text-slate-400">
+                          {firm.category}
+                        </p>
+                        <h2 className="text-xl font-semibold text-slate-900">
+                          {firm.name}
+                        </h2>
+                        <p className="text-sm text-slate-500">{firm.tagline}</p>
+                      </div>
                     </div>
-                    <p className="text-sm text-gray-600 mt-2">{block.details}</p>
-                    <p className="text-sm text-gray-600 mt-1">{block.features}</p>
+
+                    <div className="grid grid-cols-2 gap-3 text-sm text-slate-600">
+                      <div>
+                        <p className="text-slate-400 text-xs uppercase tracking-widest mb-1">
+                          Locations
+                        </p>
+                        <p>{firm.locations?.join(" · ")}</p>
+                      </div>
+                      <div>
+                        <p className="text-slate-400 text-xs uppercase tracking-widest mb-1">
+                          Styles
+                        </p>
+                        <p>{firm.styles?.join(", ")}</p>
+                      </div>
+                      {firm.priceSqft && (
+                        <div>
+                          <p className="text-slate-400 text-xs uppercase tracking-widest mb-1">
+                            Starting fee
+                          </p>
+                          <p>${firm.priceSqft.toFixed(2)} / sq.ft</p>
+                        </div>
+                      )}
+                      <div>
+                        <p className="text-slate-400 text-xs uppercase tracking-widest mb-1">
+                          Studios available
+                        </p>
+                        <p>{studioCount} catalogues</p>
+                      </div>
+                    </div>
+
+                    {firm.services?.length ? (
+                      <div className="bg-slate-100 border border-slate-200 rounded-lg p-4 text-sm text-slate-600">
+                        <p className="text-slate-500 text-xs uppercase tracking-widest mb-2">
+                          Services
+                        </p>
+                        <ul className="space-y-2">
+                          {firm.services.slice(0, 2).map((service) => (
+                            <li key={service.title}>
+                              <p className="font-medium text-slate-800">
+                                {service.title}
+                              </p>
+                              <p className="text-xs text-slate-500">
+                                {service.description}
+                              </p>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    ) : null}
+
+                    <div className="flex flex-wrap gap-3 items-center text-sm text-slate-600">
+                      <span>
+                        Team {firm.team ?? "—"} · {firm.projectsDelivered ?? 0} projects
+                      </span>
+                      {firm.avgLeadTimeWeeks && (
+                        <span>Lead time {firm.avgLeadTimeWeeks} weeks</span>
+                      )}
+                      {firm.rating && (
+                        <span>Rating {firm.rating.toFixed?.(1)}/5</span>
+                      )}
+                    </div>
+
+                    <div className="flex flex-wrap gap-3">
+                      <a
+                        href={`mailto:${firm.contact?.email || "hello@builtattic.com"}`}
+                        className="bg-slate-900 text-white px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-slate-800 transition"
+                      >
+                        Request proposal
+                      </a>
+                      {firm.contact?.website && (
+                        <a
+                          href={firm.contact.website}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="px-4 py-2.5 rounded-lg border border-slate-200 text-sm font-medium text-slate-700 hover:border-slate-300 transition"
+                        >
+                          Visit website
+                        </a>
+                      )}
+                    </div>
                   </div>
-                </motion.div>
-              ))
-            ) : (
-              <p className="col-span-full text-center text-gray-500">
-                No results found.
-              </p>
-            )}
+                </motion.article>
+              );
+            })}
+        </section>
+
+        {!loading && filteredFirms.length === 0 && (
+          <div className="bg-white border border-slate-200 rounded-xl p-8 text-center text-slate-500">
+            No firms match these filters. Try a different style or search term.
           </div>
-        </div>
-      </div>
+        )}
+
+        <section className="bg-white border border-slate-200 rounded-2xl p-8">
+          <div className="grid md:grid-cols-3 gap-8">
+            {marketplaceFeatures.map((feature) => (
+              <div key={feature.title}>
+                <h3 className="text-lg font-semibold text-slate-900 mb-2">
+                  {feature.title}
+                </h3>
+                <p className="text-sm text-slate-600 leading-relaxed">
+                  {feature.description}
+                </p>
+              </div>
+            ))}
+          </div>
+        </section>
+      </main>
+
       <Footer />
-    </>
+    </div>
   );
 };
 
-export default Urban;
+export default Firms;
+

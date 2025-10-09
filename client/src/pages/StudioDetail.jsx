@@ -1,297 +1,486 @@
-import React from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import React, { useEffect, useMemo, useState } from "react";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import Footer from "../components/Footer";
-
-import newyork_suburban from "../assets/newyork_suburban.avif";
-import california_villa from "../assets/studio/california_villa.avif";
-import carolina_abbey from "../assets/studio/carolina_abbey.avif";
-import mansion from "../assets/studio/mansion.avif";
-import apartment from "../assets/studio/apartment.avif";
-
-const items = [
-  {
-    id: 1,
-    title: "New York Suburban",
-    studio: "Studio Mosby, USA",
-    logo: "/logo.png",
-    image: newyork_suburban,
-    price: "$ 9.99 per sq. ft",
-    details: "Modern; 1200; Urban; 2",
-    features: "Front Lawn + Fenced Backyard, 3 BHK with Garage",
-    description:
-      "A modern suburban home in New York, designed for comfort and style. Features a spacious front lawn, fenced backyard, and a 3 BHK layout with an attached garage. Perfect for families seeking a blend of urban convenience and suburban tranquility.",
-  },
-  {
-    id: 2,
-    title: "California Villa",
-    studio: "Studio West, USA",
-    logo: "/logo.png",
-    image: california_villa,
-    price: "$ 12.50 per sq. ft",
-    details: "Luxury; 1500; Coastal; 3",
-    features: "Pool + Garden, 4 BHK with Balcony",
-    description:
-      "Experience luxury living in this California villa. Enjoy a private pool, lush garden, and a spacious 4 BHK layout with balconies overlooking the coast. Designed for those who appreciate elegance and comfort.",
-  },
-  {
-    id: 3,
-    title: "Texas Ranch",
-    studio: "Studio Lone Star, USA",
-    logo: "/logo.png",
-    image: carolina_abbey,
-    price: "$ 8.20 per sq. ft",
-    details: "Rustic; 1800; Countryside; 1",
-    features: "Open Land + Barn, 5 BHK with Garage",
-    description:
-      "A rustic Texas ranch with open land and a classic barn. This 5 BHK property is ideal for countryside living, offering ample space for family and outdoor activities. Includes a large garage and traditional ranch features.",
-  },
-  {
-    id: 4,
-    title: "Florida Beach House",
-    studio: "Studio Palm, USA",
-    logo: "/logo.png",
-    image: mansion,
-    price: "$ 15.00 per sq. ft",
-    details: "Modern; 1400; Beachfront; 2",
-    features: "Sea View + Pool, 3 BHK with Patio",
-    description:
-      "Wake up to the sound of waves in this modern Florida beach house. Features a sea view, private pool, and a 3 BHK layout with a relaxing patio. Perfect for beach lovers and those seeking a serene lifestyle.",
-  },
-  {
-    id: 5,
-    title: "Chicago Apartment",
-    studio: "Studio Skyline, USA",
-    logo: "/logo.png",
-    image: apartment,
-    price: "$ 10.75 per sq. ft",
-    details: "Urban; 1000; City Center; 5",
-    features: "Gym + Rooftop, 2 BHK with Balcony",
-    description:
-      "Live in the heart of Chicago with this stylish apartment. Enjoy access to a gym, rooftop views, and a 2 BHK layout with a private balcony. Ideal for urban professionals and small families.",
-  },
-  {
-    id: 6,
-    title: "Colorado Cabin",
-    studio: "Studio Rocky, USA",
-    logo: "/logo.png",
-    image: "https://picsum.photos/id/1039/1200/600",
-    price: "$ 7.50 per sq. ft",
-    details: "Rustic; 1300; Mountains; 2",
-    features: "Wood Deck + Fireplace, 4 BHK",
-    description:
-      "Escape to the mountains in this cozy Colorado cabin. Features a wood deck, fireplace, and a 4 BHK layout. Perfect for those who love nature and mountain living.",
-  },
-];
+import { fetchStudioBySlug } from "../services/marketplace.js";
 
 const StudioDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const item = items.find((i) => String(i.id) === String(id));
+  const [studio, setStudio] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  if (!item) {
+  useEffect(() => {
+    if (!id) return;
+    let cancelled = false;
+
+    async function loadStudio() {
+      setLoading(true);
+      setError(null);
+      try {
+        const item = await fetchStudioBySlug(id);
+        if (!cancelled) {
+          setStudio(item);
+          if (!item) {
+            setError("Studio not found.");
+          }
+        }
+      } catch (err) {
+        if (!cancelled) {
+          const message =
+            err?.response?.status === 404
+              ? "Studio not found."
+              : err?.message || "We could not load this studio right now.";
+          setError(message);
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    }
+
+    loadStudio();
+    return () => {
+      cancelled = true;
+    };
+  }, [id]);
+
+  const pricing = useMemo(() => studio?.pricing, [studio]);
+  const specs = useMemo(() => studio?.specs || [], [studio]);
+  const highlights = studio?.highlights || [];
+  const deliverables = studio?.delivery?.items || [];
+  const gallery = useMemo(
+    () => studio?.gallery?.filter((asset) => asset !== studio?.heroImage) || [],
+    [studio]
+  );
+
+  const previewAssets = useMemo(
+    () => (studio?.assets || []).filter((asset) => asset.kind !== "deliverable"),
+    [studio]
+  );
+
+  const secureAssets = useMemo(
+    () => (studio?.assets || []).filter((asset) => asset.kind === "deliverable"),
+    [studio]
+  );
+
+  const priceLabel =
+    studio?.priceSqft ??
+    pricing?.basePrice ??
+    studio?.price ??
+    null;
+  const currency = studio?.currency || pricing?.currency || "USD";
+
+  if (loading) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center">
-        <h2 className="text-2xl font-bold mb-4">Not Found</h2>
-        <button
-          className="px-4 py-2 bg-gray-200 rounded"
-          onClick={() => navigate(-1)}
-        >
-          Go Back
-        </button>
+      <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900">
+        <div className="flex-1 flex items-center justify-center">
+          <div className="bg-white border border-slate-200 rounded-xl px-6 py-4 text-slate-500 text-sm">
+            Loading studio…
+          </div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (error || !studio) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 text-slate-800 px-4">
+        <h2 className="text-2xl font-semibold mb-3">{error || "Studio not found"}</h2>
+        <p className="text-sm text-slate-600 mb-6 text-center max-w-md">
+          Try returning to the studio marketplace to explore other catalogue-ready
+          systems.
+        </p>
+        <div className="flex gap-3">
+          <button
+            onClick={() => navigate(-1)}
+            className="px-4 py-2 border border-slate-300 rounded-md text-sm text-slate-700 hover:bg-slate-100"
+          >
+            Go back
+          </button>
+          <Link
+            to="/studio"
+            className="px-4 py-2 bg-slate-900 text-white rounded-md text-sm hover:bg-slate-800"
+          >
+            Studio marketplace
+          </Link>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50 text-slate-800">
-      {/* Full-width Hero */}
+    <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900">
       <motion.header
         className="relative w-full h-[50vh] md:h-[60vh] lg:h-[68vh] overflow-hidden"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.8 }}
       >
-        <img
-          src={item.image}
-          alt={item.title}
-          className="absolute inset-0 w-full h-full object-cover"
-        />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/35 via-black/15 to-transparent"></div>
+        {studio.heroImage && (
+          <img
+            src={studio.heroImage}
+            alt={studio.title}
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+        )}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/45 via-black/25 to-transparent" />
 
         <div className="absolute inset-0 flex flex-col justify-between">
-          <div className="flex items-center justify-between px-4 md:px-8 py-4">
-            <div className="flex items-center gap-3">
-              <img
-                src={item.logo}
-                alt="logo"
-                className="h-10 w-10 rounded-md bg-white/60 p-1"
-              />
-              <span className="font-semibold text-white text-lg md:text-xl">
-                Buildatic
-              </span>
+          <div className="flex items-start justify-between px-4 md:px-8 py-6 text-white">
+            <div>
+              <p className="uppercase tracking-[0.3em] text-xs text-white/70 mb-2">
+                {studio.categories?.join(" | ") || "Studio"}
+              </p>
+              <h1 className="text-3xl md:text-4xl font-semibold">{studio.title}</h1>
+              <p className="text-sm text-white/80 mt-1">
+                {studio.studio || studio.firm?.name}
+              </p>
             </div>
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => navigate(-1)}
-                className="bg-white/90 text-slate-800 px-3 py-1 rounded-md text-sm shadow-sm hover:bg-white"
-              >
-                ← Back
-              </button>
+            <div className="text-right">
+              <p className="text-xs uppercase tracking-[0.3em] text-white/70">
+                price
+              </p>
+              {priceLabel ? (
+                <p className="text-lg font-semibold">
+                  {currency} {priceLabel}{" "}
+                  {pricing?.unit ? `/ ${pricing.unit}` : "/ sq.ft"}
+                </p>
+              ) : (
+                <p className="text-lg font-semibold">Talk to sales</p>
+              )}
             </div>
           </div>
-
-          <div className="px-4 md:px-12 pb-8 md:pb-12">
-            <h1 className="text-3xl md:text-5xl font-extrabold text-white leading-tight drop-shadow-sm">
-              {item.title}
-            </h1>
-            <p className="mt-2 text-sm md:text-lg text-white/90">
-              {item.studio}
-            </p>
+          <div className="px-4 md:px-8 pb-6 text-white text-sm space-y-2">
+            <div className="inline-flex flex-wrap items-center gap-4 bg-black/35 backdrop-blur px-4 py-2 rounded-full">
+              {studio.style && <span>{studio.style}</span>}
+              {pricing?.tierPricing?.length ? (
+                <span>{pricing.tierPricing.length} pricing tiers</span>
+              ) : null}
+              {studio.location?.city && (
+                <span>
+                  {studio.location.city}, {studio.location.country}
+                </span>
+              )}
+              {studio.delivery?.leadTimeWeeks && (
+                <span>
+                  Lead time {studio.delivery.leadTimeWeeks} weeks ·{" "}
+                  {studio.delivery.fulfilmentType}
+                </span>
+              )}
+            </div>
           </div>
         </div>
       </motion.header>
 
-      {/* Full-width Content */}
-      <main className="w-full px-4 md:px-8 py-10 flex-1">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 w-full">
-          {/* Main column */}
-          <section className="md:col-span-2 space-y-8">
-            {/* Summary row */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <div>
-                <h2 className="text-2xl md:text-3xl font-bold text-slate-900">
-                  {item.title}
+      <main className="flex-1">
+        <div className="max-w-6xl mx-auto px-4 lg:px-0 py-10 lg:py-16 space-y-10">
+          <nav className="flex items-center justify-between text-xs uppercase tracking-[0.3em] text-slate-400">
+            <button
+              onClick={() => navigate(-1)}
+              className="hover:text-slate-600 transition"
+            >
+              Back
+            </button>
+            <Link to="/studio" className="hover:text-slate-600 transition">
+              All studios
+            </Link>
+          </nav>
+
+          <div className="grid md:grid-cols-3 gap-10 lg:gap-16">
+            <section className="md:col-span-2 space-y-8">
+              <article className="bg-white border border-slate-200 rounded-2xl p-6 space-y-4">
+                <h2 className="text-lg font-semibold text-slate-900">
+                  Overview
                 </h2>
-                <p className="text-sm text-slate-600 mt-1">{item.studio}</p>
-              </div>
-              <div className="flex items-center gap-4">
-                <div className="text-right">
-                  <div className="text-sm text-slate-500">Price</div>
-                  <div className="text-lg font-semibold text-slate-900">
-                    {item.price}
+                <p className="text-sm text-slate-600 leading-relaxed">
+                  {studio.summary || studio.description}
+                </p>
+                <div className="grid sm:grid-cols-2 gap-4 text-sm text-slate-600">
+                  <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
+                    <p className="text-xs uppercase tracking-[0.3em] text-slate-400">
+                      Programme
+                    </p>
+                    <p className="mt-2 font-medium text-slate-900">
+                      {studio.categories?.join(", ") || "Multiple"}
+                    </p>
                   </div>
+                  <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
+                    <p className="text-xs uppercase tracking-[0.3em] text-slate-400">
+                      Location
+                    </p>
+                    <p className="mt-2 font-medium text-slate-900">
+                      {studio.location?.city}, {studio.location?.country}
+                    </p>
+                  </div>
+                  {pricing?.tierPricing?.length ? (
+                    <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
+                      <p className="text-xs uppercase tracking-[0.3em] text-slate-400">
+                        Pricing tiers
+                      </p>
+                      <ul className="mt-2 space-y-1 text-slate-700">
+                        {pricing.tierPricing.map((tier, idx) => (
+                          <li key={`${tier.min}-${tier.max}-${idx}`}>
+                            {tier.min?.toLocaleString()} –{" "}
+                            {tier.max?.toLocaleString()}{" "}
+                            {pricing.unit || "sq.ft"} · {currency} {tier.price}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : null}
+                  {studio.delivery?.leadTimeWeeks && (
+                    <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
+                      <p className="text-xs uppercase tracking-[0.3em] text-slate-400">
+                        Fulfilment
+                      </p>
+                      <p className="mt-2 font-medium text-slate-900">
+                        {studio.delivery.leadTimeWeeks} weeks ·{" "}
+                        {studio.delivery.fulfilmentType}
+                      </p>
+                    </div>
+                  )}
                 </div>
-              </div>
-            </div>
+              </article>
 
-            {/* Overview */}
-            <section className="prose max-w-full text-slate-700">
-              <h3 className="text-xl font-semibold">Overview</h3>
-              <p>{item.description}</p>
-            </section>
+              {highlights.length > 0 && (
+                <article className="bg-white border border-slate-200 rounded-2xl p-6">
+                  <h2 className="text-lg font-semibold text-slate-900 mb-4">
+                    Highlights
+                  </h2>
+                  <ul className="space-y-3 text-sm text-slate-600">
+                    {highlights.map((highlight) => (
+                      <li
+                        key={highlight}
+                        className="flex items-start gap-3 bg-slate-50 border border-slate-200 rounded-lg p-3"
+                      >
+                        <span className="mt-1 h-2 w-2 rounded-full bg-slate-400 flex-shrink-0" />
+                        <span>{highlight}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </article>
+              )}
 
-            {/* Features grid */}
-            <section>
-              <h3 className="text-lg font-semibold mb-3">Key Features</h3>
-              <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3 list-none p-0 m-0">
-                {item.features.split(",").map((feat, idx) => (
-                  <li
-                    key={idx}
-                    className="flex items-start gap-3 bg-white/80 border border-slate-100 rounded-md p-3"
-                  >
-                    <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-indigo-50 text-indigo-600 text-sm font-medium">
-                      ✓
-                    </span>
-                    <span className="text-sm text-slate-700">
-                      {feat.trim()}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </section>
-
-            {/* Additional details / specs */}
-            <section className="mt-6">
-              <h3 className="text-lg font-semibold mb-3">Specifications</h3>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                {item.details.split(";").map((d, i) => (
-                  <div
-                    key={i}
-                    className="bg-white/80 border border-slate-100 rounded-md p-3 text-sm"
-                  >
-                    <div className="text-slate-500 text-xs">Spec {i + 1}</div>
-                    <div className="mt-1 font-medium text-slate-800">
-                      {d.trim()}
-                    </div>
+              {specs.length > 0 && (
+                <article className="bg-white border border-slate-200 rounded-2xl p-6 space-y-4">
+                  <h2 className="text-lg font-semibold text-slate-900">
+                    Specifications
+                  </h2>
+                  <div className="grid sm:grid-cols-2 gap-4 text-sm text-slate-600">
+                    {specs.map((spec, idx) => (
+                      <div
+                        key={`${spec.label}-${idx}`}
+                        className="bg-slate-50 border border-slate-200 rounded-xl p-4"
+                      >
+                        <p className="text-xs uppercase tracking-[0.3em] text-slate-400">
+                          {spec.label}
+                        </p>
+                        <p className="mt-2 font-medium text-slate-900">
+                          {spec.value} {spec.unit || ""}
+                        </p>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            </section>
-          </section>
+                </article>
+              )}
 
-          {/* Sidebar */}
-          <aside className="md:col-span-1">
-            <div className="md:sticky md:top-24 space-y-4">
-              <div className="bg-white/95 border border-slate-100 rounded-md p-4">
-                <div className="flex items-center justify-between">
+              {gallery.length > 0 && (
+                <article className="bg-white border border-slate-200 rounded-2xl p-6 space-y-4">
+                  <h2 className="text-lg font-semibold text-slate-900">
+                    Gallery
+                  </h2>
+                  <div className="grid sm:grid-cols-2 gap-4">
+                    {gallery.map((image) => (
+                      <img
+                        key={image}
+                        src={image}
+                        alt={`${studio.title} visual`}
+                        className="w-full h-48 object-cover rounded-xl border border-slate-200"
+                        loading="lazy"
+                      />
+                    ))}
+                  </div>
+                </article>
+              )}
+
+              {secureAssets.length > 0 && (
+                <article className="bg-white border border-slate-200 rounded-2xl p-6 space-y-3">
+                  <h2 className="text-lg font-semibold text-slate-900">
+                    Secure deliverables
+                  </h2>
+                  <p className="text-xs text-slate-500">
+                    Delivered via encrypted download after payment and contract acceptance.
+                  </p>
+                  <ul className="space-y-2 text-sm text-slate-600">
+                    {secureAssets.map((asset) => (
+                      <li
+                        key={asset.key}
+                        className="flex items-start gap-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2"
+                      >
+                        <span className="mt-1 h-2 w-2 rounded-full bg-emerald-500 flex-shrink-0" />
+                        <div>
+                          <p className="font-medium text-slate-800">{asset.filename}</p>
+                          <p className="text-xs text-slate-500">
+                            {asset.kind} · {asset.mimeType || "file"}
+                          </p>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </article>
+              )}
+            </section>
+
+            <aside className="space-y-6 md:col-span-1 md:sticky md:top-24">
+              <div className="bg-white border border-slate-200 rounded-2xl p-6 space-y-4">
+                <div className="flex items-start justify-between gap-4">
                   <div>
-                    <div className="text-xs text-slate-500">Studio</div>
-                    <div className="font-semibold text-slate-900">
-                      {item.studio}
-                    </div>
+                    <p className="text-xs uppercase tracking-[0.3em] text-slate-400">
+                      Studio
+                    </p>
+                    <p className="text-lg font-semibold text-slate-900">
+                      {studio.studio || studio.firm?.name}
+                    </p>
+                    {studio.firm?.tagline && (
+                      <p className="text-xs text-slate-500 mt-1">
+                        {studio.firm.tagline}
+                      </p>
+                    )}
                   </div>
                   <div className="text-right">
-                    <div className="text-xs text-slate-500">Price</div>
-                    <div className="font-semibold text-indigo-700">
-                      {item.price}
-                    </div>
+                    <p className="text-xs uppercase tracking-[0.3em] text-slate-400">
+                      Rating
+                    </p>
+                    <p className="text-lg font-semibold text-slate-900">
+                      {studio.firm?.rating?.toFixed?.(1) ?? "—"}
+                    </p>
                   </div>
                 </div>
 
-                <div className="mt-4 grid grid-cols-2 gap-2 text-sm text-slate-600">
+                {studio.firm?.services?.length ? (
+                  <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
+                    <p className="text-xs uppercase tracking-[0.3em] text-slate-400 mb-2">
+                      Services
+                    </p>
+                    <ul className="space-y-2 text-sm text-slate-600">
+                      {studio.firm.services.slice(0, 3).map((service) => (
+                        <li key={service.title}>
+                          <span className="font-medium text-slate-800">
+                            {service.title}
+                          </span>
+                          <p className="text-xs text-slate-500">
+                            {service.description}
+                          </p>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
+
+                <div className="grid grid-cols-2 gap-3 text-sm text-slate-600">
                   <div>
-                    <strong>ID</strong>
-                    <div className="text-slate-500">{item.id}</div>
+                    <p className="text-xs uppercase tracking-[0.3em] text-slate-400">
+                      Type
+                    </p>
+                    <p className="mt-1 font-medium text-slate-900">
+                      {studio.categories?.[0] || "-"}
+                    </p>
                   </div>
                   <div>
-                    <strong>Type</strong>
-                    <div className="text-slate-500">
-                      {item.details.split(";")[0] || "-"}
-                    </div>
+                    <p className="text-xs uppercase tracking-[0.3em] text-slate-400">
+                      Style
+                    </p>
+                    <p className="mt-1 font-medium text-slate-900">
+                      {studio.style || studio.firm?.styles?.[0] || "-"}
+                    </p>
                   </div>
                   <div>
-                    <strong>Area</strong>
-                    <div className="text-slate-500">
-                      {item.details.split(";")[1] || "-"}
-                    </div>
+                    <p className="text-xs uppercase tracking-[0.3em] text-slate-400">
+                      Lead time
+                    </p>
+                    <p className="mt-1 font-medium text-slate-900">
+                      {studio.delivery?.leadTimeWeeks
+                        ? `${studio.delivery.leadTimeWeeks} weeks`
+                        : "On request"}
+                    </p>
                   </div>
                   <div>
-                    <strong>Location</strong>
-                    <div className="text-slate-500">
-                      {item.details.split(";")[2] || "-"}
-                    </div>
+                    <p className="text-xs uppercase tracking-[0.3em] text-slate-400">
+                      Fulfilment
+                    </p>
+                    <p className="mt-1 font-medium text-slate-900">
+                      {studio.delivery?.handOverMethod || studio.delivery?.handoverMethod || "Digital"}
+                    </p>
                   </div>
                 </div>
 
-                <div className="mt-4 flex gap-3">
-                  <button
-                    onClick={() =>
-                      navigator.clipboard?.writeText(window.location.href)
-                    }
-                    className="flex-1 bg-indigo-600 text-white py-2 rounded-md text-sm hover:bg-indigo-700"
+                <div className="flex gap-3 pt-2">
+                  <a
+                    href={`mailto:${studio.firm?.contact?.email || "hello@builtattic.com"}`}
+                    className="flex-1 bg-slate-900 text-white py-2.5 rounded-md text-sm text-center hover:bg-slate-800 transition"
                   >
-                    Share
-                  </button>
+                    Request access
+                  </a>
                   <button
                     onClick={() => window.print()}
-                    className="flex-1 bg-white border border-slate-200 text-slate-800 py-2 rounded-md text-sm hover:bg-slate-50"
+                    className="flex-1 border border-slate-300 text-slate-700 py-2.5 rounded-md text-sm hover:bg-slate-100 transition"
                   >
-                    Print
+                    Print dossier
                   </button>
                 </div>
               </div>
 
-              <div className="bg-white/95 border border-slate-100 rounded-md p-3">
-                <div className="text-sm text-slate-600 mb-2">Preview</div>
-                <img
-                  src={item.image}
-                  alt={`${item.title} preview`}
-                  className="w-full h-36 object-cover rounded-md"
-                />
-              </div>
-            </div>
-          </aside>
+              {deliverables.length > 0 && (
+                <div className="bg-white border border-slate-200 rounded-2xl p-6">
+                  <h3 className="text-lg font-semibold text-slate-900 mb-3">
+                    Deliverables
+                  </h3>
+                  <ul className="space-y-2 text-sm text-slate-600">
+                    {deliverables.map((deliverable) => (
+                      <li key={deliverable} className="flex items-start gap-2">
+                        <span className="mt-1 h-2 w-2 rounded-full bg-slate-400 flex-shrink-0" />
+                        <span>{deliverable}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  {studio.delivery?.instructions && (
+                    <p className="text-xs text-slate-500 mt-3">
+                      {studio.delivery.instructions}
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {previewAssets.length > 0 && (
+                <div className="bg-white border border-slate-200 rounded-2xl p-6 space-y-3">
+                  <h3 className="text-lg font-semibold text-slate-900">
+                    Preview assets
+                  </h3>
+                  <ul className="space-y-2 text-sm text-slate-600">
+                    {previewAssets.map((asset) => (
+                      <li key={asset.key}>
+                        <a
+                          href={asset.url || "#"}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-slate-900 hover:text-slate-700 font-medium"
+                        >
+                          {asset.filename || asset.key}
+                        </a>
+                        <p className="text-xs text-slate-500">
+                          {asset.mimeType || "file"} {asset.secure ? "· secure" : ""}
+                        </p>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </aside>
+          </div>
         </div>
       </main>
 
@@ -301,3 +490,4 @@ const StudioDetail = () => {
 };
 
 export default StudioDetail;
+

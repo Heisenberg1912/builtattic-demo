@@ -1,16 +1,16 @@
-import React, { useState } from "react";
+/* global google */
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { login } from "../services/auth.js";
-import api from "../config/axios.jsx"; // ensure backend baseURL is available
+import { login as apiLogin, loginWithGoogle } from "../services/auth.js";
 
 // Role -> path map
 const roleRedirectMap = {
-  superadmin: "/dashboard/superadmin",
+  superadmin: "/dashboard/super-admin",
+  admin: "/dashboard/admin",
+  vendor: "/dashboard/vendor",
+  firm: "/dashboard/firm",
   associate: "/dashboard/associate",
   client: "/dashboard/client",
-  firm: "/dashboard/firm",
-  sales: "/dashboard/sales",
-  admin: "/dashboard/admin",
   user: "/dashboard/user",
 };
 
@@ -18,17 +18,18 @@ const roleRedirectMap = {
 function normalizeRole(role) {
   const r = String(role || "").toLowerCase();
   const alias = {
-    business: "firm",
+    business: "vendor",
     company: "firm",
-    vendor: "firm",
+    vendor: "vendor",
+    firmadmin: "firm",
     government: "admin",
     govt: "admin",
     super_admin: "superadmin",
-    owner: "superadmin",
+    owner: "vendor",
     customer: "client",
     assoc: "associate",
-    sale: "sales",
-    salesperson: "sales",
+    sale: "vendor",
+    salesperson: "vendor",
   };
   return alias[r] || r || "user";
 }
@@ -53,121 +54,104 @@ function resolveRedirect(role, serverPath, qsPath) {
   return q || s || roleRedirectMap[norm] || (norm ? `/dashboard/${norm}` : "/dashboard");
 }
 
+function deriveRole(user) {
+  if (!user) return "user";
+  if (user.role) return normalizeRole(user.role);
+  const globals = user.rolesGlobal || [];
+  if (globals.includes("superadmin")) return "superadmin";
+  if (globals.includes("admin")) return "admin";
+  const membershipRole = user.memberships?.[0]?.role;
+  if (membershipRole === "owner") return "vendor";
+  if (membershipRole === "admin") return "firm";
+  if (membershipRole === "associate") return "associate";
+  return "user";
+}
+
 const LoginPage = ({ onLogin }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const navigate = useNavigate();
+  const googleButtonRef = useRef(null);
+  const [googleInitialized, setGoogleInitialized] = useState(false);
+
+  const handleGoogleCredential = useCallback(async (response) => {
+    try {
+      if (!response?.credential) throw new Error("Google credential missing");
+      const { token, user } = await loginWithGoogle(response.credential);
+      if (!token) throw new Error("Invalid Google login response");
+      const resolvedRole = deriveRole(user);
+      const qsPath = getQueryRedirect();
+      const dest = resolveRedirect(resolvedRole, null, qsPath);
+      try { localStorage.setItem("auth_token", token); } catch {}
+      try { localStorage.setItem("role", resolvedRole); } catch {}
+      try { localStorage.setItem("user", JSON.stringify(user || {})); } catch {}
+      if (typeof onLogin === "function") {
+        onLogin({ token, role: resolvedRole, user, redirectPath: dest });
+      }
+      navigate(dest, { replace: true });
+    } catch (err) {
+      console.error("[GOOGLE LOGIN]", err);
+      setError(err.message || "Google sign-in failed");
+    }
+  }, [navigate, onLogin]);
+
+  useEffect(() => {
+    const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+    if (!clientId) return;
+    if (window.google?.accounts?.id) {
+      setGoogleInitialized(true);
+      return;
+    }
+    const check = () => {
+      if (window.google?.accounts?.id) {
+        setGoogleInitialized(true);
+      } else {
+        setTimeout(check, 300);
+      }
+    };
+    check();
+  }, []);
+
+  useEffect(() => {
+    const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+    if (!googleInitialized || !clientId || !googleButtonRef.current) return;
+    try {
+      window.google.accounts.id.initialize({
+        client_id: clientId,
+        callback: handleGoogleCredential,
+      });
+      window.google.accounts.id.renderButton(googleButtonRef.current, {
+        theme: "outline",
+        size: "large",
+        width: "100%",
+      });
+    } catch (err) {
+      console.error("[GOOGLE INIT]", err);
+    }
+  }, [googleInitialized, handleGoogleCredential]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     setLoading(true);
     try {
-      // 1) Try the existing service first
-      let data = null;
-      let only404s = true;
-      try {
-        const res = await login({ email, password });
-        data = res?.data ?? res ?? null;
-        if (data) only404s = false;
-      } catch {
-        // proceed to backend probes
-      }
+      const { token, user } = await apiLogin(email, password);
+      if (!token) throw new Error("Invalid login response (missing token)");
 
-      // 2) Probe absolute backend URLs based on axios baseURL (avoid 5173)
-      if (!data) {
-        const apiBase = api?.defaults?.baseURL || "http://localhost:5000/api";
-        const baseURL = new URL(apiBase, window.location.origin); // e.g. http://localhost:5000/api
-        const serverOrigin = `${baseURL.protocol}//${baseURL.host}`; // http://localhost:5000
-
-        const norm = (s) => (s || "").replace(/\/+$/, "");
-        const unique = (arr) => Array.from(new Set(arr.map(norm)));
-
-        const prefixes = unique([
-          baseURL.pathname || "",                 // e.g. /api
-          norm(baseURL.pathname) + "/studio",    // e.g. /api/studio
-          "/api",
-          "/api/studio",
-          "/api/v1",
-          "/api/v1/studio",
-          "/v1",
-          "/v1/studio",
-          "", // root
-        ]);
-
-        const paths = ["/auth/login", "/login", "/users/login", "/signin", "/auth/signin"];
-
-        const postJson = async (absUrl, body) => {
-          const resp = await fetch(absUrl, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            credentials: "include",
-            body: JSON.stringify(body),
-          });
-          if (!resp.ok) {
-            const err = new Error(resp.statusText);
-            err.status = resp.status;
-            throw err;
-          }
-          return resp.json();
-        };
-
-        outer: for (const prefix of prefixes) {
-          for (const p of paths) {
-            const url = `${serverOrigin}${norm(prefix)}${p}`;
-            try {
-              const json = await postJson(url, { email, password });
-              data = json;
-              break outer;
-            } catch (err) {
-              if (err?.status && err.status !== 404) {
-                only404s = false;
-                throw err; // real server error; stop probing
-              }
-              // continue on 404
-            }
-          }
-        }
-      }
-
-      // 3) Local fallback (if all endpoints 404 and you used Register local mode)
-      if (!data && only404s) {
-        const regs = JSON.parse(localStorage.getItem("registrations") || "[]");
-        const normEmail = String(email || "").trim().toLowerCase();
-        const u = regs.find((r) => String(r.email || "").trim().toLowerCase() === normEmail);
-        if (!u) throw new Error("User not found");
-        if (String(u.password || "") !== String(password)) throw new Error("Invalid credentials");
-        data = {
-          token: `local-${Date.now().toString(36)}`,
-          role: u.role || "user",
-          user: { id: u.id, email: u.email, role: u.role || "user" },
-          redirectPath: null,
-        };
-      }
-
-      if (!data) throw new Error("Not Found");
-
-      // 4) Persist and navigate
-      const token = data.token || data.accessToken || data.jwt || data.idToken;
-      const role = data.role || data.user?.role || data.profile?.role || "user";
-      const user = data.user || data.profile || null;
-      const serverPath = data.redirectPath || data.redirect || null;
+      const resolvedRole = deriveRole(user);
       const qsPath = getQueryRedirect();
-      if (!token) throw new Error(data.message || "Invalid login response");
+      const dest = resolveRedirect(resolvedRole, null, qsPath);
 
-      // notify host if provided
+      try { localStorage.setItem("auth_token", token); } catch {}
+      try { localStorage.setItem("role", resolvedRole); } catch {}
+      try { localStorage.setItem("user", JSON.stringify(user || {})); } catch {}
+
       if (typeof onLogin === "function") {
-        onLogin({ token, role: normalizeRole(role), user, redirectPath: resolveRedirect(role, serverPath, qsPath) });
+        onLogin({ token, role: resolvedRole, user, redirectPath: dest });
       }
 
-      // persist locally (idempotent)
-      try { localStorage.setItem("token", token); } catch {}
-      try { localStorage.setItem("role", normalizeRole(role)); } catch {}
-      try { localStorage.setItem("user", JSON.stringify(user)); } catch {}
-
-      const dest = resolveRedirect(role, serverPath, qsPath);
       navigate(dest, { replace: true });
     } catch (err) {
       console.error("[LOGIN] error", err);
@@ -258,31 +242,12 @@ const LoginPage = ({ onLogin }) => {
         </div>
 
         {/* Social Login */}
-        <button className="w-full flex items-center justify-center bg-white hover:bg-gray-100 text-[#1D1D1F] font-medium py-3 rounded-lg shadow-sm transition-colors duration-300 border border-gray-300">
-          <svg
-            className="w-5 h-5 mr-2"
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 48 48"
-          >
-            <path
-              fill="#FFC107"
-              d="M43.6 20.5H42V20H24v8h11.3C34.6 32.7 29.9 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.1 6.5 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20c11.1 0 20-8.9 20-20 0-1.3-.1-2.7-.4-3.9z"
-            />
-            <path
-              fill="#FF3D00"
-              d="M6.3 14.7l6.6 4.8C14.6 16.2 18.9 14 24 14c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.1 6.5 29.3 4 24 4c-7.9 0-14.7 4.6-17.7 11.3z"
-            />
-            <path
-              fill="#4CAF50"
-              d="M24 44c5.8 0 10.7-1.9 14.2-5.1l-6.6-5.5C29.9 36 27 37 24 37c-5.9 0-10.6-3.3-12.7-8h-7l-7 5.4C9.3 39.4 16.1 44 24 44z"
-            />
-            <path
-              fill="#1976D2"
-              d="M43.6 20.5H42V20H24v8h11.3c-1.2 3.3-4.6 6-9.3 6-5.1 0-9.4-3.2-10.9-7.7h-7l-7 5.4C9.3 39.4 16.1 44 24 44c11.1 0 20-8.9 20-20 0-1.3-.1-2.7-.4-3.9z"
-            />
-          </svg>
-          Continue with Google
-        </button>
+        <div ref={googleButtonRef} className="flex justify-center" />
+        {!import.meta.env.VITE_GOOGLE_CLIENT_ID && (
+          <p className="text-xs text-gray-400 mt-2 text-center">
+            Google sign-in not configured. Set VITE_GOOGLE_CLIENT_ID to enable.
+          </p>
+        )}
 
         {/* Signup link */}
         <p className="text-center text-[#6E6E73] text-sm mt-6">

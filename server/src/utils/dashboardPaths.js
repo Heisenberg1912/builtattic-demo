@@ -1,12 +1,11 @@
 export const roleDashboardMap = {
   superadmin: '/dashboard/super-admin',
   admin: '/dashboard/admin',
-  manager: '/dashboard/manager',
-  user: '/dashboard/user',
-  associate: '/dashboard/associate',
+  vendor: '/dashboard/vendor',
   firm: '/dashboard/firm',
+  associate: '/dashboard/associate',
   client: '/dashboard/client',
-  sale: '/dashboard/sale'
+  user: '/dashboard/user'
 };
 
 export function getDashboardPath(role) {

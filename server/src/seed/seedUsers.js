@@ -36,10 +36,10 @@ const seedUsers = [
     role: 'firm',
   },
   {
-    fullName: 'Sales User',
-    email: 'sales@example.com',
-    password: 'Sales123!',
-    role: 'sales',
+    fullName: 'Vendor User',
+    email: 'vendor@example.com',
+    password: 'Vendor123!',
+    role: 'vendor',
   },
   {
     fullName: 'Basic User',
@@ -85,3 +85,4 @@ run().catch(err => {
   console.error('Seed error:', err);
   process.exit(1);
 });
+

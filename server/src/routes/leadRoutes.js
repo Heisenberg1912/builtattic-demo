@@ -24,9 +24,9 @@ import { ROLES } from '../config/constants.js';
 const router = Router();
 router.use(authenticateJWT, scopeQueryByRole('Lead'));
 router.route('/')
-  .get(authorizeRoles(ROLES.SUPER_ADMIN, ROLES.SALE), listLeads)
-  .post(authorizeRoles(ROLES.SUPER_ADMIN, ROLES.SALE), createLead);
+  .get(authorizeRoles(ROLES.SUPER_ADMIN, ROLES.VENDOR), listLeads)
+  .post(authorizeRoles(ROLES.SUPER_ADMIN, ROLES.VENDOR), createLead);
 router.route('/:id')
-  .put(authorizeRoles(ROLES.SUPER_ADMIN, ROLES.SALE), updateLead)
-  .delete(authorizeRoles(ROLES.SUPER_ADMIN, ROLES.SALE), deleteLead);
+  .put(authorizeRoles(ROLES.SUPER_ADMIN, ROLES.VENDOR), updateLead)
+  .delete(authorizeRoles(ROLES.SUPER_ADMIN, ROLES.VENDOR), deleteLead);
 export default router;

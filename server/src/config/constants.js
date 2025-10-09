@@ -31,10 +31,13 @@ export const MONGODB_DB = process.env.MONGODB_DB || "";
 
 // Roles used across the app
 export const ROLES = Object.freeze({
+  SUPER_ADMIN: "superadmin",
   ADMIN: "admin",
   USER: "user",
-  MANAGER: "manager",
-  MODERATOR: "moderator",
+  CLIENT: "client",
+  VENDOR: "vendor",
+  FIRM: "firm",
+  ASSOCIATE: "associate",
 });
 export const DEFAULT_ROLE = process.env.DEFAULT_ROLE || ROLES.USER;
 

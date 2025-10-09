@@ -18,9 +18,8 @@ const scopeQueryByRole =
 
 // Local ROLES fallback to prevent ReferenceError
 const ROLES = {
-  SUPER_ADMIN: 'super-admin',
+  SUPER_ADMIN: 'superadmin',
   ADMIN: 'admin',
-  MANAGER: 'manager',
   USER: 'user',
 };
 

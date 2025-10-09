@@ -2,11 +2,16 @@ import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import User from "../models/User.js";
 import { getDashboardPath } from "../utils/dashboardPaths.js";
+import { validateEmailDeliverability } from "../utils/emailValidation.js";
 
 const ALLOWED_ROLES = new Set([
-  "user", "admin", "superadmin", "associate", "client", "firm", "sales",
-  "business", "government", "company", "vendor", "owner", "customer", "govt",
-  "super_admin", "sale", "salesperson"
+  "user",
+  "client",
+  "vendor",
+  "firm",
+  "associate",
+  "admin",
+  "superadmin"
 ]);
 
 // --- REGISTER ---
@@ -17,15 +22,24 @@ export const Register = async (req, res, next) => {
       return next(Object.assign(new Error("All fields must be required"), { statusCode: 400 }));
     }
 
+    const deliverable = await validateEmailDeliverability(email.toLowerCase());
+    if (!deliverable) {
+      return next(Object.assign(new Error("Email domain cannot receive mail"), { statusCode: 400 }));
+    }
+
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return next(Object.assign(new Error("User already exists"), { statusCode: 409 }));
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const safeRole = ALLOWED_ROLES.has((role || "").toLowerCase()) ? role : "user";
+    const safeRole = ALLOWED_ROLES.has((role || "").toLowerCase()) ? role.toLowerCase() : "user";
 
-    await User.create({ fullName, email, password: hashedPassword, role: safeRole });
+    const rolesGlobal = [];
+    if (safeRole === "superadmin") rolesGlobal.push("superadmin");
+    if (safeRole === "admin") rolesGlobal.push("admin");
+
+    await User.create({ fullName, email, password: hashedPassword, role: safeRole, rolesGlobal });
     res.status(201).json({ message: "Registration successful" });
   } catch (error) {
     next(error);
@@ -51,7 +65,16 @@ export const Login = async (req, res, next) => {
       { expiresIn: "1d" }
     );
 
-    res.json({ token, role: user.role, dashboardPath: getDashboardPath(user.role) });
+    res.json({
+      token,
+      role: user.role,
+      dashboardPath: getDashboardPath(user.role),
+      user: {
+        _id: user._id,
+        email: user.email,
+        role: user.role
+      }
+    });
   } catch (err) {
     console.error("Login error:", err);
     res.status(500).json({ message: "Server error" });

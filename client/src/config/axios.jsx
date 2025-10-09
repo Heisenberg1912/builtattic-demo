@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const RAW_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api";
+const RAW_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:4000/api";
 const BASE_URL = RAW_BASE.replace(/\/+$/,""); // remove trailing slashes
 
 const instance = axios.create({

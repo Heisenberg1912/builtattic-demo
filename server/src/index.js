@@ -23,6 +23,9 @@ import cartRouter from './routes/cart.js';
 import ordersRouter from './routes/orders.js';
 import adminRouter from './routes/admin.js';
 import paymentsRouter from './routes/payments.js';
+import marketplaceRouter from './routes/marketplace.js';
+import uploadRouter from './routes/upload.js';
+import assetsRouter from './routes/assets.js';
 
 const app = express();
 
@@ -68,6 +71,9 @@ app.use(['/', '/api'], cartRouter);        // /cart
 app.use(['/', '/api'], ordersRouter);      // /orders
 app.use(['/', '/api'], adminRouter);       // /admin/*
 app.use(['/payments', '/api/payments'], paymentsRouter);
+app.use(['/marketplace', '/api/marketplace'], marketplaceRouter);
+app.use(['/uploads', '/api/uploads'], uploadRouter);
+app.use(['/assets', '/api/assets'], assetsRouter);
 
 /* ---------- Fallback health (works even if router changes) ---------- */
 app.get(['/health', '/api/health'], (_req, res) => {

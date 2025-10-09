@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Building2,
   Users,
@@ -11,6 +11,7 @@ import {
   Menu,
   X,
 } from "lucide-react";
+import { fetchCatalog, fetchFirmById } from "../../services/marketplace.js";
 
 const sidebarItems = [
   { id: "overview", label: "Overview", icon: <Building2 size={18} /> },
@@ -20,18 +21,113 @@ const sidebarItems = [
   { id: "notifications", label: "Notifications", icon: <Bell size={18} /> },
 ];
 
+const formatCurrency = (amount, currency = "USD") => {
+  const value = Number(amount);
+  if (!Number.isFinite(value)) return "—";
+  try {
+    return new Intl.NumberFormat(undefined, {
+      style: "currency",
+      currency,
+      maximumFractionDigits: 2,
+    }).format(value);
+  } catch {
+    return `${value.toLocaleString()} ${currency}`;
+  }
+};
+
+const formatDate = (input) => {
+  if (!input) return "—";
+  const d = new Date(input);
+  if (Number.isNaN(d.getTime())) return "—";
+  return d.toLocaleDateString(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
+};
+
 export default function FirmDashboard() {
   const [activeView, setActiveView] = useState("overview");
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [firm, setFirm] = useState(null);
+  const [owner, setOwner] = useState(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    const load = async () => {
+      setLoading(true);
+      try {
+        const storedUser =
+          typeof window !== "undefined"
+            ? JSON.parse(localStorage.getItem("user") || "null")
+            : null;
+        if (isMounted) setOwner(storedUser);
+        const firmId = storedUser?.memberships?.[0]?.firm;
+        const [catalogItems, firmDetails] = await Promise.all([
+          fetchCatalog(firmId ? { firmId } : {}),
+          fetchFirmById(firmId),
+        ]);
+        if (!isMounted) return;
+        setProducts(catalogItems);
+        setFirm(
+          firmDetails ||
+            (firmId
+              ? { _id: firmId, name: "Your Firm", approved: false }
+              : null)
+        );
+        setError(null);
+      } catch (err) {
+        if (!isMounted) return;
+        console.error("Failed to load firm dashboard data", err);
+        setError(err?.message || "Unable to load firm data");
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    };
+    load();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const currency = useMemo(
+    () => products[0]?.currency || "USD",
+    [products]
+  );
+  const totals = useMemo(() => {
+    const published = products.filter((item) => item.status === "published");
+    const totalValue = products.reduce(
+      (sum, item) => sum + Number(item.price || 0),
+      0
+    );
+    return {
+      publishedCount: published.length,
+      totalProducts: products.length,
+      totalValue,
+    };
+  }, [products]);
+
+  const viewProps = {
+    products,
+    firm,
+    owner,
+    loading,
+    error,
+    currency,
+    totals,
+  };
 
   const renderContent = () => {
     switch (activeView) {
-      case "overview": return <OverviewView />;
-      case "employees": return <EmployeesView />;
-      case "projects": return <ProjectsView />;
-      case "earnings": return <EarningsView />;
-      case "notifications": return <NotificationsView />;
-      default: return <OverviewView />;
+      case "overview": return <OverviewView {...viewProps} />;
+      case "employees": return <EmployeesView {...viewProps} />;
+      case "projects": return <ProjectsView {...viewProps} />;
+      case "earnings": return <EarningsView {...viewProps} />;
+      case "notifications": return <NotificationsView {...viewProps} />;
+      default: return <OverviewView {...viewProps} />;
     }
   };
 
@@ -102,189 +198,283 @@ export default function FirmDashboard() {
 //
 // --- Views ---
 //
-function OverviewView() {
-  const employees = { total: 120, available: 45, assigned: 75 };
-  const projects = [
-    { id: 1, name: "Highway Construction", status: "Ongoing", client: "Govt. Infrastructure" },
-    { id: 2, name: "Corporate Office Setup", status: "Pending", client: "TechWave Ltd" },
-    { id: 3, name: "Mall Renovation", status: "Completed", client: "CityMalls Group" },
-  ];
+function OverviewView({ firm, products, loading, error, totals, currency }) {
+  const latestProducts = products.slice(0, 4);
+  const draftCount = totals.totalProducts - totals.publishedCount;
 
   return (
     <>
       <section className="mb-8">
-        <h2 className="text-2xl font-bold mb-4">Welcome, BuildCorp Ltd 👋</h2>
+        <h2 className="text-2xl font-bold mb-4">
+          {firm?.name ? `Welcome, ${firm.name} 👋` : "Welcome back 👋"}
+        </h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <StatCard icon={<Users />} label="Total Employees" value={employees.total} />
-          <StatCard icon={<UserCheck />} label="Available" value={employees.available} />
-          <StatCard icon={<UserX />} label="Assigned" value={employees.assigned} />
-          <StatCard icon={<DollarSign />} label="Total Earnings" value="$56,200" />
+          <StatCard
+            icon={<Briefcase />}
+            label="Published Designs"
+            value={loading ? "…" : totals.publishedCount}
+          />
+          <StatCard
+            icon={<UserCheck />}
+            label="Drafts"
+            value={loading ? "…" : Math.max(draftCount, 0)}
+          />
+          <StatCard
+            icon={<DollarSign />}
+            label="Catalog Value"
+            value={loading ? "…" : formatCurrency(totals.totalValue, currency)}
+          />
+          <StatCard
+            icon={<ShoppingCart />}
+            label="Listings"
+            value={loading ? "…" : totals.totalProducts}
+          />
         </div>
+        {error && (
+          <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {error}
+          </div>
+        )}
       </section>
+
       <section className="mb-8">
-        <h2 className="text-xl font-semibold mb-4">Active Projects</h2>
+        <h2 className="text-xl font-semibold mb-4">Active Listings</h2>
         <div className="bg-gray-50 border border-gray-200 rounded-xl p-6 space-y-4">
-          {projects.map((p) => (
-            <div key={p.id} className="flex justify-between items-center text-sm">
-              <div>
-                <p className="font-medium">{p.name}</p>
-                <p className="text-gray-500">Client: {p.client}</p>
-              </div>
-              <span
-                className={`px-3 py-1 rounded-xl text-xs font-semibold ${
-                  p.status === "Completed"
-                    ? "bg-green-100 text-green-700"
-                    : p.status === "Ongoing"
-                    ? "bg-yellow-100 text-yellow-700"
-                    : "bg-gray-100 text-gray-600"
-                }`}
+          {loading ? (
+            <p className="text-sm text-gray-500">Loading listings…</p>
+          ) : latestProducts.length === 0 ? (
+            <p className="text-sm text-gray-500">
+              No designs published yet. Upload your first design to get started.
+            </p>
+          ) : (
+            latestProducts.map((product) => (
+              <div
+                key={product._id || product.slug}
+                className="flex justify-between items-center text-sm"
               >
-                {p.status}
-              </span>
-            </div>
-          ))}
+                <div>
+                  <p className="font-medium">{product.title}</p>
+                  <p className="text-gray-500">{product.description}</p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="font-semibold text-gray-800">
+                    {formatCurrency(product.price || 0, product.currency || currency)}
+                  </span>
+                  <span
+                    className={`px-3 py-1 rounded-xl text-xs font-semibold ${
+                      product.status === "published"
+                        ? "bg-green-100 text-green-700"
+                        : "bg-yellow-100 text-yellow-700"
+                    }`}
+                  >
+                    {product.status === "published" ? "Published" : "Draft"}
+                  </span>
+                </div>
+              </div>
+            ))
+          )}
         </div>
       </section>
+
       <section>
-        <h2 className="text-xl font-semibold mb-4">Recent Notifications</h2>
+        <h2 className="text-xl font-semibold mb-4">Latest Activity</h2>
         <div className="bg-gray-50 border border-gray-200 rounded-xl p-6 space-y-3 text-sm text-gray-700">
-          <p>📌 New project request from <b>UrbanBuild Co.</b></p>
-          <p>📌 10 employees assigned to "Highway Construction".</p>
-          <p>📌 Payment of <b>$15,000</b> received for "Mall Renovation".</p>
+          {loading ? (
+            <p>Checking for recent activity…</p>
+          ) : latestProducts.length ? (
+            latestProducts.map((product) => (
+              <p key={product._id || product.slug}>
+                🚀 <strong>{product.title}</strong> updated{" "}
+                {formatDate(product.updatedAt || product.createdAt)}.
+              </p>
+            ))
+          ) : (
+            <p>No activity recorded yet.</p>
+          )}
         </div>
       </section>
     </>
   );
 }
 
-function EmployeesView() {
-  const employees = [
-    { id: 1, name: "John Doe", role: "Project Manager", status: "Assigned" },
-    { id: 2, name: "Jane Smith", role: "Architect", status: "Available" },
-    { id: 3, name: "Peter Jones", role: "Engineer", status: "Assigned" },
-    { id: 4, name: "Mary Jane", role: "Surveyor", status: "Available" },
-  ];
+function EmployeesView({ owner, firm }) {
+  const memberships = owner?.memberships || [];
+  const team = memberships.map((membership, index) => ({
+    id: `${membership.firm}-${membership.role}-${index}`,
+    name: owner?.email || "Firm Owner",
+    role: membership.role,
+    firm: firm?.name || membership.firm,
+    status: "Active",
+  }));
+
   return (
     <section>
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-2xl font-bold">Employees</h2>
+        <h2 className="text-2xl font-bold">Team</h2>
         <button className="flex items-center gap-2 bg-gray-800 text-white px-4 py-2 rounded-lg font-semibold hover:bg-gray-700 transition-colors">
-          <Plus size={16} /> Add Employee
+          <Plus size={16} /> Invite Member
         </button>
       </div>
       <div className="bg-white border rounded-2xl shadow-sm p-6">
-        <ul className="space-y-4">
-          {employees.map((emp) => (
-            <li key={emp.id} className="flex justify-between items-center text-sm p-4 rounded-lg bg-gray-50 border">
-              <div>
-                <p className="font-medium text-base">{emp.name}</p>
-                <p className="text-gray-500">{emp.role}</p>
-              </div>
-              <span
-                className={`px-3 py-1 rounded-xl text-xs font-semibold ${
-                  emp.status === "Available"
-                    ? "bg-green-100 text-green-700"
-                    : "bg-yellow-100 text-yellow-700"
-                }`}
+        {team.length === 0 ? (
+          <p className="text-sm text-gray-500">
+            No team members yet. As soon as you add associates to the firm, they
+            will appear here.
+          </p>
+        ) : (
+          <ul className="space-y-4">
+            {team.map((member) => (
+              <li
+                key={member.id}
+                className="flex justify-between items-center text-sm p-4 rounded-lg bg-gray-50 border"
               >
-                {emp.status}
-              </span>
-            </li>
-          ))}
-        </ul>
+                <div>
+                  <p className="font-medium text-base">{member.name}</p>
+                  <p className="text-gray-500 capitalize">
+                    {member.role} • {member.firm}
+                  </p>
+                </div>
+                <span className="px-3 py-1 rounded-xl text-xs font-semibold bg-green-100 text-green-700">
+                  {member.status}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
     </section>
   );
 }
 
-function ProjectsView() {
-  const projects = [
-    { id: 1, name: "Highway Construction", status: "Ongoing", client: "Govt. Infrastructure", budget: "$5M" },
-    { id: 2, name: "Corporate Office Setup", status: "Pending", client: "TechWave Ltd", budget: "$1.2M" },
-    { id: 3, name: "Mall Renovation", status: "Completed", client: "CityMalls Group", budget: "$2.5M" },
-  ];
+function ProjectsView({ products, loading, currency }) {
+  const items = products.map((product) => ({
+    id: product._id || product.slug,
+    name: product.title,
+    status: product.status === "published" ? "Live" : "Draft",
+    description: product.description,
+    price: formatCurrency(product.price || 0, product.currency || currency),
+    createdAt: formatDate(product.createdAt),
+  }));
+
   return (
     <section>
-      <h2 className="text-2xl font-bold mb-4">Projects</h2>
+      <h2 className="text-2xl font-bold mb-4">Marketplace Projects</h2>
       <div className="space-y-4">
-        {projects.map((p) => (
-          <div key={p.id} className="bg-gray-50 border rounded-xl p-6">
-            <div className="flex justify-between items-start">
-              <div>
-                <h3 className="font-semibold text-lg">{p.name}</h3>
-                <p className="text-gray-500 text-sm">Client: {p.client} | Budget: {p.budget}</p>
+        {loading ? (
+          <p className="text-sm text-gray-500">Loading projects�</p>
+        ) : items.length === 0 ? (
+          <p className="text-sm text-gray-500">
+            No projects yet. Upload designs to populate your marketplace catalogue.
+          </p>
+        ) : (
+          items.map((item) => (
+            <div key={item.id} className="bg-gray-50 border rounded-xl p-6">
+              <div className="flex justify-between items-start">
+                <div>
+                  <h3 className="font-semibold text-lg">{item.name}</h3>
+                  <p className="text-gray-500 text-sm">{item.description}</p>
+                  <p className="text-xs text-gray-400 mt-2">Listed {item.createdAt}</p>
+                </div>
+                <span
+                  className={`px-3 py-1 rounded-xl text-xs font-semibold ${
+                    item.status === "Live"
+                      ? "bg-green-100 text-green-700"
+                      : "bg-yellow-100 text-yellow-700"
+                  }`}
+                >
+                  {item.status}
+                </span>
               </div>
-              <span
-                className={`px-3 py-1 rounded-xl text-xs font-semibold ${
-                  p.status === "Completed"
-                    ? "bg-green-100 text-green-700"
-                    : p.status === "Ongoing"
-                    ? "bg-yellow-100 text-yellow-700"
-                    : "bg-gray-100 text-gray-600"
-                }`}
-              >
-                {p.status}
-              </span>
+              <div className="mt-4 flex items-center justify-between text-sm text-gray-600">
+                <span>Catalog Price</span>
+                <span className="font-semibold text-gray-900">{item.price}</span>
+              </div>
             </div>
-          </div>
-        ))}
+          ))
+        )}
       </div>
     </section>
   );
 }
 
-function EarningsView() {
-  const transactions = [
-    { id: 1, from: "CityMalls Group", amount: "+$15,000", date: "2024-08-22" },
-    { id: 2, from: "TechWave Ltd (Advance)", amount: "+$5,000", date: "2024-08-20" },
-    { id: 3, from: "Govt. Infrastructure", amount: "+$25,000", date: "2024-08-18" },
-  ];
+function EarningsView({ products, loading, currency, totals }) {
+  const published = products.filter((product) => product.status === "published");
+  const transactions = published.map((product) => ({
+    id: product._id || product.slug,
+    title: product.title,
+    amount: formatCurrency(product.price || 0, product.currency || currency),
+    date: formatDate(product.updatedAt || product.createdAt),
+  }));
+
   return (
     <section>
       <h2 className="text-2xl font-bold mb-4">Earnings</h2>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="bg-gray-800 text-white p-6 rounded-xl">
-          <p className="text-gray-300 text-sm">Total Revenue</p>
-          <p className="text-3xl font-bold mt-2">$56,200.00</p>
+          <p className="text-gray-300 text-sm">Total Catalog Value</p>
+          <p className="text-3xl font-bold mt-2">
+            {loading ? "�" : formatCurrency(totals.totalValue, currency)}
+          </p>
         </div>
         <div className="lg:col-span-2 bg-gray-50 border rounded-xl p-6">
-          <h3 className="font-semibold mb-4">Recent Transactions</h3>
-          <ul className="space-y-3 text-sm">
-            {transactions.map((t) => (
-              <li key={t.id} className="flex justify-between">
-                <div>
-                  <p className="text-gray-800">From {t.from}</p>
-                  <p className="text-gray-400 text-xs">{t.date}</p>
-                </div>
-                <p className="font-medium text-green-600">{t.amount}</p>
-              </li>
-            ))}
-          </ul>
+          <h3 className="font-semibold mb-4">Recent Published Listings</h3>
+          {loading ? (
+            <p className="text-sm text-gray-500">Loading transactions�</p>
+          ) : transactions.length === 0 ? (
+            <p className="text-sm text-gray-500">
+              Publish a design to start tracking earnings.
+            </p>
+          ) : (
+            <ul className="space-y-3 text-sm">
+              {transactions.map((txn) => (
+                <li key={txn.id} className="flex justify-between">
+                  <div>
+                    <p className="text-gray-800">{txn.title}</p>
+                    <p className="text-gray-400 text-xs">{txn.date}</p>
+                  </div>
+                  <p className="font-medium text-green-600">{txn.amount}</p>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       </div>
     </section>
   );
 }
 
-function NotificationsView() {
-  const notifications = [
-    { id: 1, text: "New project request from UrbanBuild Co.", time: "2 hours ago", icon: <Briefcase /> },
-    { id: 2, text: "10 employees assigned to 'Highway Construction'.", time: "1 day ago", icon: <Users /> },
-    { id: 3, text: "Payment of $15,000 received for 'Mall Renovation'.", time: "3 days ago", icon: <DollarSign /> },
-  ];
+function NotificationsView({ products, loading }) {
+  const updates = products.map((product, index) => ({
+    id: product._id || product.slug || index,
+    message: `${product.title} ${product.status === "published" ? "went live" : "saved as draft"}.`,
+    time: formatDate(product.updatedAt || product.createdAt),
+    icon: product.status === "published" ? <DollarSign /> : <Briefcase />,
+  }));
+
   return (
     <section>
       <h2 className="text-2xl font-bold mb-4">Notifications</h2>
       <div className="bg-gray-50 border rounded-xl p-6 space-y-4">
-        {notifications.map((n) => (
-          <div key={n.id} className="flex items-start gap-4 p-4 bg-white rounded-lg border">
-            <div className="text-gray-500 mt-1">{n.icon}</div>
-            <div>
-              <p className="text-gray-800">{n.text}</p>
-              <p className="text-gray-400 text-xs mt-1">{n.time}</p>
+        {loading ? (
+          <p className="text-sm text-gray-500">Checking activity�</p>
+        ) : updates.length === 0 ? (
+          <p className="text-sm text-gray-500">
+            No notifications yet. Publish a design to see updates here.
+          </p>
+        ) : (
+          updates.map((update) => (
+            <div
+              key={update.id}
+              className="flex items-start gap-4 p-4 bg-white rounded-lg border"
+            >
+              <div className="text-gray-600">{update.icon}</div>
+              <div>
+                <p className="text-gray-800 text-sm">{update.message}</p>
+                <p className="text-xs text-gray-400 mt-1">{update.time}</p>
+              </div>
             </div>
-          </div>
-        ))}
+          ))
+        )}
       </div>
     </section>
   );
@@ -318,3 +508,10 @@ function StatCard({ icon, label, value }) {
     </div>
   );
 }
+
+
+
+
+
+
+

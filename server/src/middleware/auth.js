@@ -19,3 +19,18 @@ export const authenticateJWT = async (req, res, next) => {
 };
 
 export { authenticateJWT as protect };
+
+export const authorizeRoles = (...roles) => {
+  const normalized = roles.flat().map((role) => String(role).toLowerCase());
+  return (req, res, next) => {
+    if (!req.user) return res.status(401).json({ message: "Unauthorized" });
+    if (normalized.length === 0) return next();
+    const primaryRole = String(req.user.role || "").toLowerCase();
+    if (normalized.includes(primaryRole)) return next();
+    const globalRoles = (req.user.rolesGlobal || []).map((role) => String(role).toLowerCase());
+    if (globalRoles.some((role) => normalized.includes(role))) return next();
+    return res.status(403).json({ message: "Forbidden" });
+  };
+};
+
+export const scopeQueryByRole = (_resource) => (_req, _res, next) => next();

@@ -9,12 +9,13 @@ export async function attachUser(req, _res, next) {
     const payload = jwt.verify(token, process.env.JWT_ACCESS_SECRET);
     // Always fetch fresh roles/memberships from DB
     const fresh = await User.findById(payload._id)
-      .select('email rolesGlobal memberships')
+      .select('email role rolesGlobal memberships')
       .lean();
     if (fresh) {
       req.user = {
         _id: fresh._id,
         email: fresh.email,
+        role: fresh.role,
         rolesGlobal: fresh.rolesGlobal || [],
         memberships: fresh.memberships || [],
       };
@@ -29,6 +30,7 @@ export function signAccess(user) {
   const payload = {
     _id: user._id,
     email: user.email,
+    role: user.role || 'user',
     rolesGlobal: user.rolesGlobal || [],
     memberships: user.memberships || [],
   };

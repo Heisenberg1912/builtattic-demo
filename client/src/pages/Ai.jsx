@@ -1,151 +1,186 @@
 import React, { useState } from "react";
-import { Send, Settings, History, Star, Menu, Sparkles } from "lucide-react";
+import {
+  Send,
+  Settings,
+  History,
+  Sparkles,
+  Menu,
+  Lightbulb,
+} from "lucide-react";
 import { Link } from "react-router-dom";
+
+const starterPrompts = [
+  "Assemble a shortlist of studio catalogues for a coastal residential brief under $15/sq.ft.",
+  "Recommend procurement bundles for the Skyline Loft studio package (include MOQ, lead time, and QA docs).",
+  "Draft an onboarding email for a sustainability associate joining the Terraced Courtyard Villa project.",
+  "Summarise outstanding fulfilment tasks for the Urban Mixed-Use Podium order, including payouts and asset releases.",
+];
+
+const systemIntro =
+  "Hi, I'm Builtattic Assist — your delivery co-pilot. I can surface catalogues, procurement packs, associate talent, and order fulfilment details across your workspace.";
 
 const Ai = () => {
   const [messages, setMessages] = useState([
-    { role: "ai", content: "Hello! How can I help you today?" },
+    { role: "ai", content: systemIntro },
   ]);
   const [input, setInput] = useState("");
-  const [history, setHistory] = useState(["Chat 1"]);
+  const [history] = useState(["Hospitality retrofit", "Masterplan RFP", "BIM QA"]);
   const [highlights, setHighlights] = useState([
-    "Important points will appear here",
+    "Try 'Generate a fulfilment checklist for the Skyline Loft order' to see end-to-end coverage.",
   ]);
   const [showSidebar, setShowSidebar] = useState(false);
   const [showHighlights, setShowHighlights] = useState(false);
 
   const handleSend = () => {
     if (!input.trim()) return;
-
     const newMessage = { role: "user", content: input };
-    const aiResponse = {
+    const reply = {
       role: "ai",
-      content: "Kam krna h nhi bs AI se puchlo",
+      content:
+        "Thanks! I'm assembling insights from the live catalogue, warehouse inventory, associate bench, and fulfilment pipelines. (This is placeholder text — connect the AI endpoint to surface real responses.)",
     };
-
-    setMessages([...messages, newMessage, aiResponse]);
-    setHighlights([...highlights, `⭐ ${input}`]);
+    setMessages((prev) => [...prev, newMessage, reply]);
+    setHighlights((prev) => [
+      ...prev,
+      `⭐ ${input.slice(0, 80)}${input.length > 80 ? "…" : ""}`,
+    ]);
     setInput("");
   };
 
   return (
-    <div className="h-[calc(100vh-65px)] flex flex-col bg-stone-50 text-stone-900 overflow-hidden font-sans">
-      {/* Mobile Top Bar */}
-      <div className="lg:hidden flex justify-between items-center px-4 py-3 border-b border-stone-200 bg-white">
-        <button
-          type="button"
-          onClick={() => setShowSidebar(!showSidebar)}
-          className="p-2 rounded-lg text-stone-600 hover:bg-stone-100 transition"
-        >
-          <Menu size={20} />
-        </button>
-        <h1 className="font-light text-xl text-stone-800 tracking-wider">
-          Builtattic
-        </h1>
-        <button
-          type="button"
-          onClick={() => setShowHighlights(!showHighlights)}
-          className="p-2 rounded-lg text-stone-600 hover:bg-stone-100 transition"
-        >
-          <Sparkles size={20} />
-        </button>
-      </div>
+    <div className="min-h-[calc(100vh-64px)] bg-slate-50 text-slate-900 flex flex-col">
+      <header className="bg-white border-b border-slate-200 lg:hidden">
+        <div className="flex items-center justify-between px-4 py-3">
+          <button
+            onClick={() => setShowSidebar((prev) => !prev)}
+            className="p-2 rounded-lg text-slate-600 hover:bg-slate-100"
+          >
+            <Menu size={18} />
+          </button>
+          <h1 className="text-lg font-semibold tracking-[0.3em] text-slate-700 uppercase">
+            Builtattic Assist
+          </h1>
+          <button
+            onClick={() => setShowHighlights((prev) => !prev)}
+            className="p-2 rounded-lg text-slate-600 hover:bg-slate-100"
+          >
+            <Sparkles size={18} />
+          </button>
+        </div>
+      </header>
+
       <div className="flex flex-1 overflow-hidden">
-        {/* Left Sidebar */}
-        <div
-          className={`${showSidebar ? "block" : "hidden"} lg:block w-72 bg-white border-r border-stone-200 flex flex-col p-6 transition-all duration-300 ease-in-out`}
+        <aside
+          className={`${
+            showSidebar ? "block" : "hidden"
+          } lg:block w-72 bg-white border-r border-slate-200 flex flex-col`}
         >
-          <div className="flex-1 overflow-y-auto space-y-3">
-            <div className="flex items-center text-lg font-medium text-stone-800 mb-6">
-              <History size={20} className="mr-3 text-stone-500" /> History
-            </div>
-            {history.map((item, idx) => (
-              <div
-                key={idx}
-                className="bg-stone-100 hover:bg-stone-200 p-3 rounded-lg text-sm cursor-pointer transition"
+          <div className="px-6 py-6 border-b border-slate-100">
+            <p className="text-xs uppercase tracking-[0.35em] text-slate-400">
+              sessions
+            </p>
+          </div>
+          <div className="flex-1 overflow-y-auto px-6 py-4 space-y-3">
+            {history.map((item) => (
+              <button
+                key={item}
+                className="w-full text-left text-sm bg-slate-100 hover:bg-slate-200 rounded-lg px-3 py-2 transition"
               >
                 {item}
-              </div>
+              </button>
             ))}
           </div>
-          {/* CHANGE: Link styled as button (no nested Link inside button) */}
           <Link
             to="/aisetting"
-            className="mt-110 bg-stone-900 text-white py-3 px-5 rounded-lg flex items-center justify-center gap-2 hover:bg-black transition-all duration-300 ease-in-out shadow-sm"
+            className="m-6 bg-slate-900 text-white py-3 px-5 rounded-lg flex items-center justify-center gap-2 text-sm font-medium hover:bg-slate-800 transition shadow-sm"
           >
-            <Settings size={18} /> Settings
+            <Settings size={16} /> Settings
           </Link>
-        </div>
+        </aside>
 
-        {/* Chat Section */}
-        <div className="flex-1 flex flex-col">
-          {/* Messages */}
-          <div className="flex-1 overflow-y-auto p-8 space-y-6">
-            {messages.map((msg, idx) => (
+        <section className="flex-1 flex flex-col">
+          <header className="border-b border-slate-200 bg-white px-8 py-6 hidden lg:block">
+            <p className="text-sm text-slate-500">
+              Ask me to draft scopes, summarise deliverables, analyse catalogues, or
+              pull procurement insights. I keep track of your workspace context.
+            </p>
+          </header>
+
+          <div className="flex-1 overflow-y-auto px-6 sm:px-12 py-8 space-y-6">
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              {starterPrompts.map((prompt) => (
+                <button
+                  key={prompt}
+                  onClick={() => setInput(prompt)}
+                  className="flex items-start gap-3 bg-white border border-slate-200 rounded-xl px-4 py-3 text-left text-sm text-slate-600 hover:border-slate-300 transition"
+                >
+                  <Lightbulb className="w-4 h-4 text-slate-400 mt-1" />
+                  <span>{prompt}</span>
+                </button>
+              ))}
+            </div>
+
+            {messages.map((message, index) => (
               <div
-                key={idx}
+                key={index}
                 className={`flex ${
-                  msg.role === "user" ? "justify-end" : "justify-start"
+                  message.role === "user" ? "justify-end" : "justify-start"
                 }`}
               >
                 <div
-                  className={`px-5 py-3 rounded-xl max-w-xl shadow-md ${
-                    msg.role === "user"
-                      ? "bg-stone-900 text-white rounded-br-sm"
-                      : "bg-white text-stone-800 rounded-bl-sm border border-stone-200"
+                  className={`px-5 py-4 rounded-2xl max-w-3xl text-sm leading-relaxed shadow-sm ${
+                    message.role === "user"
+                      ? "bg-slate-900 text-white rounded-br-sm"
+                      : "bg-white text-slate-700 rounded-bl-sm border border-slate-200"
                   }`}
                 >
-                  {msg.content}
+                  {message.content}
                 </div>
               </div>
             ))}
           </div>
 
-          {/* Input Box */}
-          <div className="p-6 border-t border-stone-200 bg-white flex items-center gap-4">
-            <input
-              type="text"
-              className="flex-1 border border-stone-300 rounded-full px-5 py-3 text-sm text-stone-700 focus:ring-2 focus:ring-stone-400 focus:border-stone-400 outline-none transition-all duration-300"
-              placeholder="Type your message..."
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  handleSend();
-                }
-              }}
-            />
-            <button
-              type="button"
-              onClick={handleSend}
-              className="bg-stone-900 p-3 rounded-full hover:bg-black transition-all duration-300 shadow-md"
-            >
-              <Send size={20} className="text-white" />
-            </button>
-          </div>
-        </div>
+          <footer className="border-t border-slate-200 bg-white px-6 sm:px-10 py-6">
+            <div className="flex gap-3 items-end">
+              <textarea
+                rows="2"
+                value={input}
+                onChange={(event) => setInput(event.target.value)}
+                className="flex-1 border border-slate-200 rounded-2xl px-4 py-3 text-sm text-slate-700 resize-none focus:outline-none focus:ring-2 focus:ring-slate-200"
+                placeholder="Ask Builtattic Assist anything…"
+              />
+              <button
+                onClick={handleSend}
+                className="bg-slate-900 text-white p-3 rounded-2xl shadow hover:bg-slate-800 transition"
+              >
+                <Send size={20} />
+              </button>
+            </div>
+          </footer>
+        </section>
 
-        {/* Right Highlights */}
-        <div
+        <aside
           className={`${
             showHighlights ? "block" : "hidden"
-          } lg:block w-72 bg-white border-l border-stone-200 p-6 flex flex-col transition-all duration-300 ease-in-out`}
+          } lg:block w-72 bg-white border-l border-slate-200 flex flex-col`}
         >
-          <div className="flex items-center text-lg font-medium text-stone-800 mb-6">
-            <Sparkles size={20} className="mr-3 text-stone-500" /> Highlights
+          <div className="px-6 py-6 border-b border-slate-100 flex items-center gap-2">
+            <Sparkles size={16} className="text-slate-500" />
+            <span className="text-sm font-medium text-slate-600">
+              Highlights
+            </span>
           </div>
-          <div className="flex-1 overflow-y-auto space-y-3 text-sm">
-            {highlights.map((point, idx) => (
+          <div className="flex-1 overflow-y-auto px-6 py-4 space-y-3 text-sm text-slate-600">
+            {highlights.map((item) => (
               <div
-                key={idx}
-                className="p-3 bg-stone-100 border border-stone-200 rounded-lg shadow-sm text-stone-700"
+                key={item}
+                className="bg-slate-100 border border-slate-200 rounded-lg px-3 py-2"
               >
-                {point}
+                {item}
               </div>
             ))}
           </div>
-        </div>
+        </aside>
       </div>
     </div>
   );
