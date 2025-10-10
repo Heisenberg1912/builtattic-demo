@@ -9,7 +9,7 @@ const AssetSchema = new mongoose.Schema(
     checksum: String,
     storageProvider: {
       type: String,
-      enum: ['local', 's3'],
+      enum: ['local', 's3', 'remote'],
       default: 'local',
     },
     storagePath: String,
@@ -41,4 +41,3 @@ const AssetSchema = new mongoose.Schema(
 AssetSchema.index({ secure: 1, status: 1, createdAt: -1 });
 
 export default mongoose.model('Asset', AssetSchema);
-

@@ -1,3 +1,18 @@
+import innovationHub from "../assets/firms/innovation_hub.avif";
+import techCorp from "../assets/firms/tech_corp.avif";
+import metroBusiness from "../assets/firms/metro_business.avif";
+import culturalCenter from "../assets/firms/cultural_center.avif";
+import globalFinanceTower from "../assets/firms/global_finance_tower.avif";
+import healthcareCampus from "../assets/firms/healthcare.avif";
+
+import californiaVilla from "../assets/studio/california_villa.avif";
+import mansion from "../assets/studio/mansion.avif";
+import apartment from "../assets/studio/apartment.avif";
+import carolinaAbbey from "../assets/studio/carolina_abbey.avif";
+
+import ultratechCement from "../assets/warehouse/ultratech_cement.webp";
+import tmtSteel from "../assets/warehouse/tmt_steelbar.jpeg";
+
 export const marketplaceFeatures = [
   {
     title: "Catalogue-backed delivery",
@@ -41,8 +56,8 @@ const firmsById = {
       },
     ],
     rating: 4.8,
-    coverImage: "/src/assets/firms/lumen-cover.jpg",
-    gallery: ["/src/assets/firms/lumen-01.jpg", "/src/assets/firms/lumen-02.jpg"],
+    coverImage: innovationHub,
+    gallery: [techCorp, metroBusiness],
     contact: {
       email: "studio@lumenatelier.com",
       phone: "+1 415 555 0123",
@@ -75,8 +90,8 @@ const firmsById = {
       },
     ],
     rating: 4.9,
-    coverImage: "/src/assets/firms/gridline-cover.jpg",
-    gallery: ["/src/assets/firms/gridline-01.jpg", "/src/assets/firms/gridline-02.jpg"],
+    coverImage: culturalCenter,
+    gallery: [globalFinanceTower, metroBusiness],
     contact: {
       email: "hello@gridline.co",
       phone: "+65 6235 2212",
@@ -109,8 +124,8 @@ const firmsById = {
       },
     ],
     rating: 4.7,
-    coverImage: "/src/assets/firms/oryza-cover.jpg",
-    gallery: ["/src/assets/firms/oryza-01.jpg", "/src/assets/firms/oryza-02.jpg"],
+    coverImage: healthcareCampus,
+    gallery: [culturalCenter, innovationHub],
     contact: {
       email: "contact@atelieroryza.com",
       phone: "+351 21 234 567",
@@ -134,12 +149,8 @@ export const fallbackStudios = [
     description: "Open-plan loft typologies tuned for coastal climates.",
     summary:
       "Sculpted concrete and expansive glazing with modular interiors ideal for fast-track residential developments.",
-    heroImage: "/src/assets/studio/california_villa.avif",
-    gallery: [
-      "/src/assets/studio/california_villa.avif",
-      "/src/assets/studio/mansion.avif",
-      "/src/assets/studio/apartment.avif",
-    ],
+    heroImage: californiaVilla,
+    gallery: [californiaVilla, mansion, apartment],
     priceSqft: 12.5,
     pricing: {
       unit: "sq.ft",
@@ -188,11 +199,8 @@ export const fallbackStudios = [
     description: "Layered terraces with passive ventilation and water harvesting.",
     summary:
       "Sunken courtyards and cascading terraces tuned for Mediterranean climates using cross-laminated timber.",
-    heroImage: "/src/assets/studio/newyork_suburban.avif",
-    gallery: [
-      "/src/assets/studio/newyork_suburban.avif",
-      "/src/assets/studio/carolina_abbey.avif",
-    ],
+      heroImage: carolinaAbbey,
+      gallery: [carolinaAbbey, mansion],
     priceSqft: 15.75,
     pricing: {
       unit: "sq.ft",
@@ -293,7 +301,7 @@ export const fallbackMaterials = [
     slug: "ultratech-opc-53",
     kind: "material",
     description: "High-strength OPC cement compliant with IS 12269.",
-    heroImage: "/src/assets/warehouse/ultratech_cement.webp",
+    heroImage: ultratechCement,
     pricing: {
       unit: "bag",
       unitLabel: "Per 50kg bag",
@@ -338,7 +346,7 @@ export const fallbackMaterials = [
     slug: "fe500d-tmt-rebars",
     kind: "material",
     description: "High ductility TMT bars supplied in 12m lengths.",
-    heroImage: "/src/assets/warehouse/tmt_steelbar.jpeg",
+    heroImage: tmtSteel,
     pricing: {
       unit: "kg",
       unitLabel: "Per kg",
@@ -537,4 +545,3 @@ export const fallbackAssociates = [
 ];
 
 export default marketplaceFeatures;
-

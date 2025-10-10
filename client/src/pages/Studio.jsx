@@ -170,7 +170,7 @@ const Studio = () => {
           </div>
         )}
 
-        <section className="grid gap-6 md:grid-cols-2">
+        <section className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {!loading &&
             filteredStudios.map((studio) => {
               const href = studio.slug
@@ -329,4 +329,3 @@ const Studio = () => {
 };
 
 export default Studio;
-

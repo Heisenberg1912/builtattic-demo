@@ -1,4 +1,4 @@
-import 'dotenv/config';
+﻿import 'dotenv/config';
 import mongoose from 'mongoose';
 import argon2 from 'argon2';
 import User from '../models/User.js';
@@ -176,6 +176,318 @@ const FIRMS = [
       address: 'Rua do Ouro 118, 1100-060 Lisboa, Portugal',
     },
   },
+  {
+    name: 'Aurelius Classical Atelier',
+    slug: 'aurelius-classical',
+    tagline: 'Stone-built residences inspired by Roman heritage.',
+    description:
+      'Aurelius Classical Atelier crafts monumental villas in carved stone with modern services hidden behind classical detailing.',
+    category: 'Residential',
+    styles: ['Classical'],
+    locations: ['Rome, Italy', 'Nice, France'],
+    priceSqft: 19.2,
+    scope: ['Luxury villas', 'Urban palazzos', 'Estate masterplanning'],
+    team: 38,
+    projectsDelivered: 96,
+    avgLeadTimeWeeks: 7,
+    rating: 4.8,
+    coverImage: 'https://images.unsplash.com/photo-1575517111478-7f6afd0973db?auto=format&w=1600',
+    gallery: [
+      'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?auto=format&w=1600',
+      'https://images.unsplash.com/photo-1600585154340-0ef3c08dcdb6?auto=format&w=1600',
+    ],
+    services: [
+      {
+        title: 'Heritage Residence Kit',
+        description:
+          'Stone masonry shell with integrated climate control, BIM deliverables, and classical façade kits.',
+        leadTimeWeeks: 10,
+      },
+      {
+        title: 'Estate Regeneration Program',
+        description:
+          'Adaptive reuse of historical estates with hospitality-ready infrastructure and cultural approvals.',
+        leadTimeWeeks: 14,
+      },
+    ],
+    certifications: ['Europa Nostra', 'ISO 19650'],
+    partners: ['Carrara Quarries Consortium', 'Lazio Engineering Labs'],
+    testimonials: [
+      {
+        author: 'Giovanni Robles',
+        role: 'Director, Villa Aurea Estates',
+        quote:
+          'Their mastery of stone allowed us to deliver 34 bespoke villas without compromising modern comfort.',
+      },
+    ],
+    contact: {
+      email: 'studio@aureliusclassical.com',
+      phone: '+39 06 555 0123',
+      website: 'https://aureliusclassical.com',
+      timezone: 'Europe/Rome',
+      address: 'Via dei Condotti 92, Rome, Italy',
+    },
+  },
+  {
+    name: 'Cathedral Works Guild',
+    slug: 'cathedral-works',
+    tagline: 'Gothic commercial landmarks with modern systems.',
+    description:
+      'Cathedral Works Guild engineers soaring commercial halls with pointed arches, structural brick, and adaptive services for retailers.',
+    category: 'Commercial',
+    styles: ['Gothic'],
+    locations: ['Prague, Czech Republic', 'Vienna, Austria'],
+    priceSqft: 24.6,
+    scope: ['Retail flagships', 'Boutique hotels', 'Urban renewal'],
+    team: 54,
+    projectsDelivered: 148,
+    avgLeadTimeWeeks: 9,
+    rating: 4.7,
+    coverImage: 'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?auto=format&w=1600',
+    gallery: [
+      'https://images.unsplash.com/photo-1576085898329-95edb7f95bb4?auto=format&w=1600',
+      'https://images.unsplash.com/photo-1505842465776-3acb7fc9288e?auto=format&w=1600',
+    ],
+    services: [
+      {
+        title: 'Retail Nave Package',
+        description:
+          'Brick and rib vault structural system with integrated lighting, signage, and tenant-fit BIM models.',
+        leadTimeWeeks: 11,
+      },
+      {
+        title: 'Gothic Hospitality Conversion',
+        description:
+          'Transforms industrial shells into gothic-themed hotels complete with MEP, acoustic, and life-safety documentation.',
+        leadTimeWeeks: 12,
+      },
+    ],
+    certifications: ['LEED Gold', 'ISO 9001'],
+    partners: ['Moravian Brick Cooperative', 'Danube Lighting Systems'],
+    testimonials: [
+      {
+        author: 'Sophia Keller',
+        role: 'Head of Development, Helios Retail',
+        quote:
+          'The guild delivered a vaulted flagship that doubled footfall while maintaining historic character.',
+      },
+    ],
+    contact: {
+      email: 'projects@cathedralworks.eu',
+      phone: '+420 241 005 320',
+      website: 'https://cathedralworks.eu',
+      timezone: 'Europe/Prague',
+      address: 'Husova 21, Prague 1, Czech Republic',
+    },
+  },
+  {
+    name: 'Arcadia Leisure Lab',
+    slug: 'arcadia-leisure',
+    tagline: 'Renaissance-inspired recreational environments.',
+    description:
+      'Arcadia Leisure Lab creates immersive recreational destinations blending Renaissance geometry with contemporary amenities.',
+    category: 'Recreational',
+    styles: ['Renaissance'],
+    locations: ['Seville, Spain', 'Orlando, USA'],
+    priceSqft: 17.8,
+    scope: ['Theme parks', 'Cultural plazas', 'Resort amenities'],
+    team: 62,
+    projectsDelivered: 204,
+    avgLeadTimeWeeks: 8,
+    rating: 4.9,
+    coverImage: 'https://images.unsplash.com/photo-1529429617124-aee0a93d4432?auto=format&w=1600',
+    gallery: [
+      'https://images.unsplash.com/photo-1520350098754-1a834128b24b?auto=format&w=1600',
+      'https://images.unsplash.com/photo-1512455102796-7f3c4bac7a95?auto=format&w=1600',
+    ],
+    services: [
+      {
+        title: 'Renaissance Water Plaza',
+        description:
+          'Prefabricated colonnades, fountains, and performance decks with integrated show control systems.',
+        leadTimeWeeks: 10,
+      },
+      {
+        title: 'Heritage Resort Amenity Pack',
+        description:
+          'Wellness and leisure modules with AR storytelling overlays and modular landscape zones.',
+        leadTimeWeeks: 9,
+      },
+    ],
+    certifications: ['ILAM Aquatic Safety', 'ASTM F24'],
+    partners: ['Hydraform Pools', 'Aura Projection Design'],
+    testimonials: [
+      {
+        author: 'Miguel Torres',
+        role: 'Director, Palacio Del Sol Resorts',
+        quote:
+          'Arcadia delivered a Renaissance water plaza that increased dwell time and nightly event revenue by 22%.',
+      },
+    ],
+    contact: {
+      email: 'hello@arcadialeisure.com',
+      phone: '+34 954 600 732',
+      website: 'https://arcadialeisure.com',
+      timezone: 'Europe/Madrid',
+      address: 'Avenida de la Constitución 14, Seville, Spain',
+    },
+  },
+  {
+    name: 'Archivum Institute Partners',
+    slug: 'archivum-institute',
+    tagline: 'Steel-framed academic icons with ceremonial grandeur.',
+    description:
+      'Archivum Institute Partners specialises in institutional campuses with baroque-inspired atria and robust steel systems.',
+    category: 'Institutional',
+    styles: ['Baroque'],
+    locations: ['Boston, USA', 'Zurich, Switzerland'],
+    priceSqft: 21.5,
+    scope: ['Universities', 'Research centres', 'Museums'],
+    team: 71,
+    projectsDelivered: 122,
+    avgLeadTimeWeeks: 11,
+    rating: 4.6,
+    coverImage: 'https://images.unsplash.com/photo-1467757002533-947bfcfba0a0?auto=format&w=1600',
+    gallery: [
+      'https://images.unsplash.com/photo-1468636138210-8504d934f0b5?auto=format&w=1600',
+      'https://images.unsplash.com/photo-1533749047139-189de3cf07e8?auto=format&w=1600',
+    ],
+    services: [
+      {
+        title: 'Signature Atrium Package',
+        description:
+          'Steel and glass atrium structures with ceremonial staircases, acoustics, and exhibition lighting plans.',
+        leadTimeWeeks: 14,
+      },
+      {
+        title: 'Campus Heritage Upgrade',
+        description:
+          'Seismic and accessibility upgrading for legacy academic halls with occupant phasing strategies.',
+        leadTimeWeeks: 16,
+      },
+    ],
+    certifications: ['LEED Platinum', 'ISO 38200'],
+    partners: ['Helix Steel Consortium', 'Luminaire Systems'],
+    testimonials: [
+      {
+        author: 'Dr. Evelyn Richter',
+        role: 'Provost, Helios University',
+        quote:
+          'They delivered a ceremonial atrium that doubled exhibition capacity while staying within our academic calendar.',
+      },
+    ],
+    contact: {
+      email: 'projects@archivuminstitute.com',
+      phone: '+1 617 420 8801',
+      website: 'https://archivuminstitute.com',
+      timezone: 'America/New_York',
+      address: '77 Beacon Street, Boston, MA 02108',
+    },
+  },
+  {
+    name: 'Transverse Neoclassica',
+    slug: 'transverse-neoclassica',
+    tagline: 'Glass infrastructural hubs with civic gravitas.',
+    description:
+      'Transverse Neoclassica engineers transport interchanges with sweeping neoclassical forms and high-performance glazing.',
+    category: 'Infrastructural',
+    styles: ['Neoclassical'],
+    locations: ['Doha, Qatar', 'Warsaw, Poland'],
+    priceSqft: 26.4,
+    scope: ['Transport hubs', 'Civic concourses', 'Mobility masterplans'],
+    team: 58,
+    projectsDelivered: 89,
+    avgLeadTimeWeeks: 12,
+    rating: 4.8,
+    coverImage: 'https://images.unsplash.com/photo-1505843490538-51312b3d605d?auto=format&w=1600',
+    gallery: [
+      'https://images.unsplash.com/photo-1491553895911-0055eca6402d?auto=format&w=1600',
+      'https://images.unsplash.com/photo-1464036388609-747537735d23?auto=format&w=1600',
+    ],
+    services: [
+      {
+        title: 'Transit Concourse System',
+        description:
+          'Glazed concourse modules with passenger flow analytics, MEP coordination, and retail plug-ins.',
+        leadTimeWeeks: 15,
+      },
+      {
+        title: 'Adaptive Mobility Masterplan',
+        description:
+          'Data-driven transport masterplanning with multimodal hubs, BIM, and stakeholder facilitation.',
+        leadTimeWeeks: 20,
+      },
+    ],
+    certifications: ['EN 1090', 'LEED for Transit'],
+    partners: ['GlasLab Facades', 'FlowSense Analytics'],
+    testimonials: [
+      {
+        author: 'Karol Majka',
+        role: 'Director, Warsaw Mobility Agency',
+        quote:
+          'The concourse system lifted throughput by 18% while delivering a civic presence our city demanded.',
+      },
+    ],
+    contact: {
+      email: 'contact@transverseneo.com',
+      phone: '+48 22 200 4720',
+      website: 'https://transverseneo.com',
+      timezone: 'Europe/Warsaw',
+      address: 'Plac Trzech Krzyży 3, Warsaw, Poland',
+    },
+  },
+  {
+    name: 'Verdant Grain Cooperative',
+    slug: 'verdant-grain',
+    tagline: 'Victorian agricultural campuses rooted in timber craft.',
+    description:
+      'Verdant Grain Cooperative designs regenerative agricultural campuses with Victorian detailing and heavy timber structures.',
+    category: 'Agricultural',
+    styles: ['Victorian'],
+    locations: ['Canterbury, UK', 'Canberra, Australia'],
+    priceSqft: 13.6,
+    scope: ['Agri-tech campuses', 'Food processing halls', 'Visitor centres'],
+    team: 44,
+    projectsDelivered: 132,
+    avgLeadTimeWeeks: 8,
+    rating: 4.7,
+    coverImage: 'https://images.unsplash.com/photo-1505842465776-3acb7fc9288e?auto=format&w=1600',
+    gallery: [
+      'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&w=1600',
+      'https://images.unsplash.com/photo-1491553895911-0055eca6402d?auto=format&w=1600',
+    ],
+    services: [
+      {
+        title: 'Agri Innovation Barn Kit',
+        description:
+          'Mass timber barn structures with daylighting, environmental controls, and agri-tech integration.',
+        leadTimeWeeks: 9,
+      },
+      {
+        title: 'Farmgate Visitor Centre',
+        description:
+          'Victorian-inspired tasting halls with modular exhibits, retail, and farm-to-table kitchens.',
+        leadTimeWeeks: 10,
+      },
+    ],
+    certifications: ['FSC Chain-of-Custody', 'BREEAM Very Good'],
+    partners: ['GreenSpan Timber', 'Harvest IoT Systems'],
+    testimonials: [
+      {
+        author: 'Claire Donnelly',
+        role: 'Director, Canterbury AgriTech',
+        quote:
+          'Their timber barn kit gave us a carbon-smart hub that doubled public engagement and processing efficiency.',
+      },
+    ],
+    contact: {
+      email: 'hello@verdantgrain.coop',
+      phone: '+44 1227 555 921',
+      website: 'https://verdantgrain.coop',
+      timezone: 'Europe/London',
+      address: '8 Sun Street, Canterbury CT1 2HX, UK',
+    },
+  },
 ];
 
 const STUDIO_PRODUCTS = [
@@ -305,14 +617,15 @@ const STUDIO_PRODUCTS = [
         filename: 'Terraced-Villa-FFE.xlsx',
         mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         kind: 'preview',
+        secure: false,
       },
-        {
-          key: 'studios/terraced-villa/full-pack.zip',
-          filename: 'Terraced-Villa-Pack.zip',
-          mimeType: 'application/zip',
-          kind: 'deliverable',
-          secure: true,
-        },
+      {
+        key: 'studios/terraced-villa/full-pack.zip',
+        filename: 'Terraced-Villa-Pack.zip',
+        mimeType: 'application/zip',
+        kind: 'deliverable',
+        secure: true,
+      },
     ],
     delivery: {
       leadTimeWeeks: 5,
@@ -378,13 +691,13 @@ const STUDIO_PRODUCTS = [
         mimeType: 'image/png',
         kind: 'preview',
         secure: false,
-        {
-          key: 'studios/urban-hub/full-pack.zip',
-          filename: 'Urban-Hub-Delivery-Pack.zip',
-          mimeType: 'application/zip',
-          kind: 'deliverable',
-          secure: true,
-        },
+      },
+      {
+        key: 'studios/urban-hub/full-pack.zip',
+        filename: 'Urban-Hub-Delivery-Pack.zip',
+        mimeType: 'application/zip',
+        kind: 'deliverable',
+        secure: true,
       },
     ],
     delivery: {
@@ -803,35 +1116,40 @@ async function seed() {
     for (const product of STUDIO_PRODUCTS) {
       const targetFirm =
         createdFirms[product.firmSlug] || Object.values(createdFirms)[0];
-    const doc = await Product.create({
-      ...product,
-      firm: targetFirm?._id,
-      price: product.priceSqft ?? product.pricing?.basePrice ?? product.price ?? 0,
-      inventory: 0,
-    });
-    if (Array.isArray(product.assets) && product.assets.length) {
-      for (const asset of product.assets) {
-        await Asset.create({
-          key: asset.key,
-          originalName: asset.filename,
-          mimeType: asset.mimeType,
-          sizeBytes: asset.sizeBytes || 0,
-          storageProvider: asset.secure ? 'local' : 'remote',
-          storagePath: asset.secure ? undefined : `https://cdn.builtattic.dev/${asset.key}`,
-          secure: asset.secure ?? asset.kind === 'deliverable',
-          algorithm: 'aes-256-gcm',
-          product: doc._id,
-          kind: asset.kind || 'preview',
-          status: asset.kind === 'deliverable' ? 'ready' : 'uploaded',
-          metadata: { seeded: true },
-        });
+      const doc = await Product.create({
+        ...product,
+        firm: targetFirm?._id,
+        price: product.priceSqft ?? product.pricing?.basePrice ?? product.price ?? 0,
+        inventory: 0,
+      });
+      if (Array.isArray(product.assets) && product.assets.length) {
+        for (const asset of product.assets) {
+          await Asset.updateOne(
+            { key: asset.key },
+            {
+              $set: {
+                originalName: asset.filename,
+                mimeType: asset.mimeType,
+                sizeBytes: asset.sizeBytes || 0,
+                storageProvider: asset.secure ? 'local' : 'remote',
+                storagePath: asset.secure ? null : `https://cdn.builtattic.dev/${asset.key}`,
+                secure: asset.secure ?? asset.kind === 'deliverable',
+                algorithm: 'aes-256-gcm',
+                product: doc._id,
+                kind: asset.kind || 'preview',
+                status: asset.kind === 'deliverable' ? 'ready' : 'uploaded',
+                metadata: { seeded: true },
+              },
+            },
+            { upsert: true }
+          );
+        }
       }
-    }
-    if (targetFirm && product.firmSlug) {
-      const current = featuredByFirm.get(product.firmSlug) || [];
-      current.push(doc._id);
-      featuredByFirm.set(product.firmSlug, current);
-    }
+      if (targetFirm && product.firmSlug) {
+        const current = featuredByFirm.get(product.firmSlug) || [];
+        current.push(doc._id);
+        featuredByFirm.set(product.firmSlug, current);
+      }
       seededProducts += 1;
     }
 
@@ -846,20 +1164,25 @@ async function seed() {
       });
       if (Array.isArray(product.assets) && product.assets.length) {
         for (const asset of product.assets) {
-          await Asset.create({
-            key: asset.key,
-            originalName: asset.filename,
-            mimeType: asset.mimeType,
-            sizeBytes: asset.sizeBytes || 0,
-            storageProvider: asset.secure ? 'local' : 'remote',
-            storagePath: asset.secure ? undefined : `https://cdn.builtattic.dev/${asset.key}`,
-            secure: asset.secure ?? asset.kind === 'deliverable',
-            algorithm: 'aes-256-gcm',
-            product: doc._id,
-            kind: asset.kind || 'preview',
-            status: asset.kind === 'deliverable' ? 'ready' : 'uploaded',
-            metadata: { seeded: true },
-          });
+          await Asset.updateOne(
+            { key: asset.key },
+            {
+              $set: {
+                originalName: asset.filename,
+                mimeType: asset.mimeType,
+                sizeBytes: asset.sizeBytes || 0,
+                storageProvider: asset.secure ? 'local' : 'remote',
+                storagePath: asset.secure ? null : `https://cdn.builtattic.dev/${asset.key}`,
+                secure: asset.secure ?? asset.kind === 'deliverable',
+                algorithm: 'aes-256-gcm',
+                product: doc._id,
+                kind: asset.kind || 'preview',
+                status: asset.kind === 'deliverable' ? 'ready' : 'uploaded',
+                metadata: { seeded: true },
+              },
+            },
+            { upsert: true }
+          );
         }
       }
       seededProducts += 1;
@@ -894,3 +1217,4 @@ async function seed() {
 }
 
 seed();
+

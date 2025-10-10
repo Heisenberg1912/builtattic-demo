@@ -135,7 +135,7 @@ const Firms = () => {
           </div>
         )}
 
-        <section className="grid gap-6 md:grid-cols-2">
+        <section className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {!loading &&
             filteredFirms.map((firm) => {
               const studioCount = firm.featuredStudios?.length ?? 0;
@@ -288,4 +288,3 @@ const Firms = () => {
 };
 
 export default Firms;
-

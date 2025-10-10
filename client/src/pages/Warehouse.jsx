@@ -170,7 +170,7 @@ const Warehouse = () => {
           </div>
         )}
 
-        <section className="grid gap-6 md:grid-cols-2">
+        <section className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {!loading &&
             filteredItems.map((item) => {
               const favourite = favourites.has(item._id);
@@ -287,4 +287,3 @@ const Warehouse = () => {
 };
 
 export default Warehouse;
-
