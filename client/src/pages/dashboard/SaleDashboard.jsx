@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import {
   DollarSign,
   Package,
@@ -10,7 +10,6 @@ import {
   Menu,
   X,
 } from "lucide-react";
-
 const sidebarItems = [
   { id: "overview", label: "Overview", icon: <TrendingUp size={18} /> },
   { id: "transactions", label: "Orders", icon: <ShoppingCart size={18} /> },
@@ -110,9 +109,9 @@ function OverviewView() {
     { material: "Bricks", status: "Low Stock" },
     { material: "Tiles", status: "Critical" },
   ];
-  return (
-    <>
-      <section className="mb-8">
+    return (
+      <>
+        <section className="mb-8">
         <h2 className="text-2xl font-bold mb-4">Marketplace Overview</h2>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard icon={<DollarSign />} label="Revenue" value="$120,500" />
@@ -130,7 +129,7 @@ function OverviewView() {
                 <li key={t.id} className="flex justify-between items-center">
                   <div>
                     <p className="font-medium">{t.material}</p>
-                    <p className="text-gray-500">{t.client} � {t.id}</p>
+                    <p className="text-gray-500">{t.client} ù {t.id}</p>
                   </div>
                   <span
                     className={`text-xs px-3 py-1 rounded-xl font-semibold ${

@@ -2,37 +2,10 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { login as apiLogin, loginWithGoogle } from "../services/auth.js";
-
-// Role -> path map
-const roleRedirectMap = {
-  superadmin: "/dashboard/super-admin",
-  admin: "/dashboard/admin",
-  vendor: "/dashboard/vendor",
-  firm: "/dashboard/firm",
-  associate: "/dashboard/associate",
-  client: "/dashboard/client",
-  user: "/dashboard/user",
-};
-
-// normalize role names to keys above
-function normalizeRole(role) {
-  const r = String(role || "").toLowerCase();
-  const alias = {
-    business: "vendor",
-    company: "firm",
-    vendor: "vendor",
-    firmadmin: "firm",
-    government: "admin",
-    govt: "admin",
-    super_admin: "superadmin",
-    owner: "vendor",
-    customer: "client",
-    assoc: "associate",
-    sale: "vendor",
-    salesperson: "vendor",
-  };
-  return alias[r] || r || "user";
-}
+import {
+  normalizeRole,
+  resolveDashboardPath,
+} from "../constants/roles.js";
 
 // optional query redirect override (?redirect=/x, ?returnTo=/x, ?next=/x, ?r=/x)
 function getQueryRedirect() {
@@ -51,7 +24,7 @@ function resolveRedirect(role, serverPath, qsPath) {
   const q = qsPath && qsPath.startsWith("/") ? qsPath : null;
   const s = serverPath && serverPath.startsWith("/") ? serverPath : null;
   const norm = normalizeRole(role);
-  return q || s || roleRedirectMap[norm] || (norm ? `/dashboard/${norm}` : "/dashboard");
+  return q || s || resolveDashboardPath(norm);
 }
 
 function deriveRole(user) {

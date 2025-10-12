@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
@@ -10,6 +10,7 @@ import RegistrStrip from "../components/registrstrip";
 import Footer from "../components/Footer";
 import { marketplaceFeatures } from "../data/marketplace.js";
 import { fetchStudios } from "../services/marketplace.js";
+import { analyzeImage } from "../utils/imageSearch.js";
 
 const MotionLink = motion(Link);
 
@@ -25,6 +26,11 @@ const Studio = () => {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [imageKeywords, setImageKeywords] = useState([]);
+  const [imagePreview, setImagePreview] = useState(null);
+  const [imageStatus, setImageStatus] = useState("");
+  const [imageSearching, setImageSearching] = useState(false);
+  const imageInputRef = useRef(null);
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedQuery(query.trim()), 350);
@@ -83,7 +89,7 @@ const Studio = () => {
     return ["All", ...unique];
   }, [meta, studios]);
 
-  const filteredStudios = useMemo(() => {
+  const filteredByStyle = useMemo(() => {
     if (selectedStyle === "All") return studios;
     const target = selectedStyle.toLowerCase();
     return studios.filter((studio) => {
@@ -94,6 +100,64 @@ const Studio = () => {
       return byProductStyle || byFirmStyle;
     });
   }, [studios, selectedStyle]);
+
+  const displayStudios = useMemo(() => {
+    if (!imageKeywords.length) return filteredByStyle;
+    const needles = imageKeywords.map((kw) => kw.toLowerCase());
+    return filteredByStyle.filter((studio) => {
+      const haystackParts = [
+        studio.title,
+        studio.summary,
+        studio.description,
+        studio.style,
+        ...(studio.categories || []),
+        ...(studio.tags || []),
+        studio.firm?.name,
+      ]
+        .filter(Boolean)
+        .map((value) => String(value).toLowerCase());
+      return needles.some((needle) =>
+        haystackParts.some((part) => part.includes(needle))
+      );
+    });
+  }, [filteredByStyle, imageKeywords]);
+
+  const handleReverseSearchClick = () => {
+    if (imageInputRef.current) {
+      imageInputRef.current.click();
+    }
+  };
+
+  const handleImageSelected = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    setImageSearching(true);
+    setImageStatus("Analysing image...");
+    try {
+      const result = await analyzeImage(file);
+      setImagePreview(result.dataUrl);
+      setImageKeywords(result.keywords);
+      setImageStatus(
+        `Reverse search matched keywords: ${result.keywords.join(", ")}`
+      );
+    } catch (err) {
+      console.error("Reverse image search failed", err);
+      setImageStatus(err?.message || "Could not analyse the image.");
+      setImageKeywords([]);
+      setImagePreview(null);
+    } finally {
+      setImageSearching(false);
+      if (event.target) {
+        event.target.value = "";
+      }
+    }
+  };
+
+  const clearImageSearch = () => {
+    setImageKeywords([]);
+    setImagePreview(null);
+    setImageStatus("");
+  };
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
@@ -146,17 +210,71 @@ const Studio = () => {
               ))}
             </select>
 
-            <div className="relative flex-1">
-              <HiOutlineSearch className="w-5 h-5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <div className="flex flex-1 items-center gap-3">
+              <div className="relative flex-1">
+                <HiOutlineSearch className="w-5 h-5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <input
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                  placeholder="Search studios, locations, or deliverables..."
+                  className="w-full bg-white border border-slate-200 rounded-lg pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-slate-200"
+                />
+              </div>
+              <button
+                type="button"
+                onClick={handleReverseSearchClick}
+                disabled={imageSearching}
+                className="whitespace-nowrap px-4 py-2.5 rounded-lg border border-slate-200 text-sm text-slate-700 bg-white hover:border-slate-300 disabled:opacity-60"
+              >
+                {imageSearching ? "Scanning..." : "Reverse image"}
+              </button>
               <input
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-                placeholder="Search studios, locations, or deliverables..."
-                className="w-full bg-white border border-slate-200 rounded-lg pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-slate-200"
+                ref={imageInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleImageSelected}
               />
             </div>
           </div>
         </section>
+
+        {(imageStatus || imagePreview || imageKeywords.length > 0) && (
+          <section className="bg-white border border-slate-200 rounded-xl px-4 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 text-sm">
+            <div className="space-y-1">
+              <p className="font-semibold text-slate-700">
+                Reverse image search
+              </p>
+              <p className="text-slate-500">
+                {imageStatus ||
+                  "Upload a reference to discover similar catalogue items."}
+              </p>
+              {imageKeywords.length > 0 && (
+                <p className="text-slate-400 text-xs uppercase tracking-wide">
+                  Matched keywords: {imageKeywords.join(", ")}
+                </p>
+              )}
+            </div>
+            <div className="flex items-center gap-3">
+              {imagePreview && (
+                <img
+                  src={imagePreview}
+                  alt="Reverse search preview"
+                  className="w-16 h-16 rounded-lg border border-slate-200 object-cover"
+                />
+              )}
+              {imageKeywords.length > 0 && (
+                <button
+                  type="button"
+                  onClick={clearImageSearch}
+                  className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs text-slate-600 hover:border-slate-300"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
+          </section>
+        )}
 
         {error && (
           <div className="bg-rose-50 border border-rose-200 text-rose-700 rounded-xl px-4 py-3 text-sm">
@@ -172,7 +290,7 @@ const Studio = () => {
 
         <section className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {!loading &&
-            filteredStudios.map((studio) => {
+            displayStudios.map((studio) => {
               const href = studio.slug
                 ? `/studio/${studio.slug}`
                 : `/studio/${encodeURIComponent(studio.id)}`;
@@ -300,7 +418,7 @@ const Studio = () => {
             })}
         </section>
 
-        {!loading && filteredStudios.length === 0 && (
+        {!loading && displayStudios.length === 0 && (
           <div className="bg-white border border-slate-200 rounded-xl p-8 text-center text-slate-500">
             No studios match these filters. Try adjusting the typology, style, or
             search keywords.

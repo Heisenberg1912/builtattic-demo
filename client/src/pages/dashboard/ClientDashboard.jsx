@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+﻿import { useEffect, useMemo, useState } from "react";
 import {
   User,
   ShoppingCart,
@@ -23,7 +23,7 @@ const sidebarItems = [
 
 const formatCurrency = (amount, currency = "USD") => {
   const value = Number(amount);
-  if (!Number.isFinite(value)) return "—";
+  if (!Number.isFinite(value)) return "ΓÇö";
   try {
     return new Intl.NumberFormat(undefined, {
       style: "currency",
@@ -204,28 +204,28 @@ function ProfileView({ catalog, loading, error, totalValue, currency }) {
   const featured = catalog.slice(0, 3);
   return (
     <>
-      <section className="mb-8">
-        <h2 className="text-2xl font-bold mb-4">Welcome back 👋</h2>
+        <section className="mb-8">
+        <h2 className="text-2xl font-bold mb-4">Welcome back ≡ƒæï</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <StatCard
             icon={<CheckCircle />}
             label="Available Designs"
-            value={loading ? "…" : catalog.length}
+            value={loading ? "ΓÇª" : catalog.length}
           />
           <StatCard
             icon={<Clock />}
             label="Published"
-            value={loading ? "…" : published.length}
+            value={loading ? "ΓÇª" : published.length}
           />
           <StatCard
             icon={<ShoppingCart />}
             label="Wishlist Ready"
-            value={loading ? "…" : featured.length}
+            value={loading ? "ΓÇª" : featured.length}
           />
           <StatCard
             icon={<DollarSign />}
             label="Catalog Value"
-            value={loading ? "…" : formatCurrency(totalValue, currency)}
+            value={loading ? "ΓÇª" : formatCurrency(totalValue, currency)}
           />
         </div>
         {error && (
@@ -238,7 +238,7 @@ function ProfileView({ catalog, loading, error, totalValue, currency }) {
         <h2 className="text-xl font-semibold mb-4">Featured Marketplace Files</h2>
         <div className="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
           {loading ? (
-            <p className="text-sm text-gray-500">Loading designs…</p>
+            <p className="text-sm text-gray-500">Loading designsΓÇª</p>
           ) : featured.length === 0 ? (
             <p className="text-sm text-gray-500">
               No designs available yet. Check back after seeding data.
@@ -265,11 +265,11 @@ function ProfileView({ catalog, loading, error, totalValue, currency }) {
         <h2 className="text-xl font-semibold mb-4">Marketplace Updates</h2>
         <div className="bg-gray-50 border border-gray-200 rounded-xl p-6 space-y-3 text-sm text-gray-700">
           {loading ? (
-            <p>Fetching updates…</p>
+            <p>Fetching updatesΓÇª</p>
           ) : published.length ? (
             published.map((item) => (
               <p key={item._id || item.slug}>
-                📌 <strong>{item.title}</strong> now available for{" "}
+                ≡ƒôî <strong>{item.title}</strong> now available for{" "}
                 {formatCurrency(item.price || 0, item.currency || "USD")}.
               </p>
             ))
@@ -287,7 +287,7 @@ function OrdersView({ catalog, loading, error, currency }) {
     name: item.title,
     status: item.status === "published" ? "Delivered" : "Draft",
     provider: item.firm?.name || "Marketplace",
-    date: item.createdAt ? new Date(item.createdAt).toLocaleDateString() : "—",
+    date: item.createdAt ? new Date(item.createdAt).toLocaleDateString() : "ΓÇö",
     price: formatCurrency(item.price || 0, item.currency || currency),
   }));
 
@@ -296,7 +296,7 @@ function OrdersView({ catalog, loading, error, currency }) {
       <h2 className="text-2xl font-bold mb-4">My Orders</h2>
       <div className="bg-white border rounded-2xl shadow-sm p-6 space-y-4">
         {loading ? (
-          <p className="text-sm text-gray-500">Loading orders…</p>
+          <p className="text-sm text-gray-500">Loading ordersΓÇª</p>
         ) : error ? (
           <p className="text-sm text-red-600">{error}</p>
         ) : orders.length === 0 ? (
@@ -310,7 +310,7 @@ function OrdersView({ catalog, loading, error, currency }) {
               <div>
                 <p className="font-medium text-base">{order.name}</p>
                 <p className="text-gray-500">
-                  Provider: {order.provider} • Date: {order.date}
+                  Provider: {order.provider} ΓÇó Date: {order.date}
                 </p>
               </div>
               <div className="flex items-center gap-3">
@@ -352,7 +352,7 @@ function WishlistView({ catalog, wishlist, setWishlist, loading, currency }) {
     <section>
       <h2 className="text-2xl font-bold mb-4">My Wishlist</h2>
       {loading ? (
-        <p className="text-sm text-gray-500">Loading wishlist…</p>
+        <p className="text-sm text-gray-500">Loading wishlistΓÇª</p>
       ) : wishlist.length === 0 ? (
         <div className="text-sm text-gray-500 mb-6">
           Wishlist is empty. Explore designs below and save your favourites.
@@ -433,27 +433,27 @@ function PaymentsView({ catalog, wishlist, loading, currency, totalValue }) {
             <p className="text-gray-500">Wishlist Total</p>
             <p className="text-lg font-semibold text-gray-900">
               {loading
-                ? "…"
+                ? "ΓÇª"
                 : formatCurrency(wishlistTotal, wishlist[0]?.currency || currency)}
             </p>
           </div>
           <div className="rounded-lg border bg-gray-50 p-4">
             <p className="text-gray-500">Catalog Value</p>
             <p className="text-lg font-semibold text-gray-900">
-              {loading ? "…" : formatCurrency(totalValue, currency)}
+              {loading ? "ΓÇª" : formatCurrency(totalValue, currency)}
             </p>
           </div>
           <div className="rounded-lg border bg-gray-50 p-4">
             <p className="text-gray-500">Designs Selected</p>
             <p className="text-lg font-semibold text-gray-900">
-              {loading ? "…" : wishlist.length || catalog.length}
+              {loading ? "ΓÇª" : wishlist.length || catalog.length}
             </p>
           </div>
         </div>
 
         <h3 className="font-semibold">Ready for Checkout</h3>
         {loading ? (
-          <p className="text-sm text-gray-500">Preparing payment summary…</p>
+          <p className="text-sm text-gray-500">Preparing payment summaryΓÇª</p>
         ) : items.length === 0 ? (
           <p className="text-sm text-gray-500">
             Add designs to your wishlist to prepare a payment.
@@ -509,7 +509,7 @@ function NotificationsView({ catalog, loading }) {
       <h2 className="text-2xl font-bold mb-4">Notifications</h2>
       <div className="bg-gray-50 border rounded-xl p-6 space-y-4">
         {loading ? (
-          <p className="text-sm text-gray-500">Loading notifications�</p>
+          <p className="text-sm text-gray-500">Loading notificationsà</p>
         ) : notifications.length === 0 ? (
           <p className="text-sm text-gray-500">
             No notifications yet. Uploads will appear here as they go live.

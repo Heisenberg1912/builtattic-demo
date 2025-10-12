@@ -9,6 +9,7 @@ import {
   HiOutlineGlobeAlt,
 } from "react-icons/hi2";
 import { motion, AnimatePresence } from "framer-motion";
+import { normalizeRole, resolveDashboardPath } from "../constants/roles.js";
 
 /* ---------- helpers for dashboard path ---------- */
 function getJSON(key) {
@@ -25,30 +26,33 @@ function getCurrentUser() {
   const user = auth?.user || auth || getJSON("user");
   return user && typeof user === "object" ? user : null;
 }
+function readAuthSnapshot() {
+  try {
+    const rawToken =
+      localStorage.getItem("auth_token") || localStorage.getItem("token");
+    const token =
+      rawToken && rawToken !== "null" && rawToken !== "undefined" ? rawToken : null;
+    const role = normalizeRole(localStorage.getItem("role") || "user");
+    return { token, role };
+  } catch {
+    return { token: null, role: "user" };
+  }
+}
+function deriveRoleFromUser(user, fallbackRole) {
+  if (!user) return normalizeRole(fallbackRole);
+  if (user.role) return normalizeRole(user.role);
+  const globals = user.rolesGlobal || [];
+  if (globals.includes("superadmin")) return "superadmin";
+  if (globals.includes("admin")) return "admin";
+  const membershipRole = user.memberships?.[0]?.role;
+  if (membershipRole === "owner") return "vendor";
+  if (membershipRole === "admin") return "firm";
+  if (membershipRole === "associate") return "associate";
+  return normalizeRole(fallbackRole);
+}
 function computeDashboardPath(user, role) {
-  if (user) {
-    const globals = user.rolesGlobal || [];
-    if (globals.includes("superadmin") || globals.includes("admin")) {
-      return "/admin/dashboard";
-    }
-    const m = (user.memberships || [])[0];
-    if (m && m.firm) {
-      // if you don't have per-firm dashboards yet, change to '/firm/dashboard'
-      return `/firms/${m.firm}/dashboard`;
-    }
-  }
-  switch ((role || "user").toLowerCase()) {
-    case "superadmin":
-    case "admin":
-      return "/admin/dashboard";
-    case "vendor":
-    case "firm":
-      return "/firm/dashboard";
-    case "associate":
-      return "/associate/dashboard";
-    default:
-      return "/account";
-  }
+  const resolved = deriveRoleFromUser(user, role);
+  return resolveDashboardPath(resolved);
 }
 /* ----------------------------------------------- */
 
@@ -116,20 +120,29 @@ const Navbar = () => {
   const wishlistCtx = (typeof useWishlist === "function" ? useWishlist() : null) || {};
   const cartItems = Array.isArray(cartCtx.cartItems) ? cartCtx.cartItems : [];
   const wishlistItems = Array.isArray(wishlistCtx.wishlistItems) ? wishlistCtx.wishlistItems : [];
-  const cartCount = cartItems.length;
+  const cartCount = cartItems.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
   const wishlistCount = wishlistItems.length;
 
-  // Auth info from localStorage
-  let token = null;
-  let role = "user";
-  try {
-    token = localStorage.getItem("auth_token") || localStorage.getItem("token");
-    role = localStorage.getItem("role") || "user";
-  } catch {}
-  const isAuthed = !!token;
+  const [authState, setAuthState] = useState(() => readAuthSnapshot());
+  const [user, setUser] = useState(() => getCurrentUser());
+  const isAuthed = Boolean(authState.token);
+  const dashboardPath = useMemo(() => computeDashboardPath(user, authState.role), [user, authState.role]);
 
-  const user = useMemo(() => getCurrentUser(), []);
-  const dashboardPath = useMemo(() => computeDashboardPath(user, role), [user, role]);
+  useEffect(() => {
+    const refresh = () => {
+      setAuthState(readAuthSnapshot());
+      setUser(getCurrentUser());
+    };
+    window.addEventListener("storage", refresh);
+    window.addEventListener("auth:login", refresh);
+    window.addEventListener("auth:logout", refresh);
+    refresh();
+    return () => {
+      window.removeEventListener("storage", refresh);
+      window.removeEventListener("auth:login", refresh);
+      window.removeEventListener("auth:logout", refresh);
+    };
+  }, []);
 
   // Dropdown state
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -218,6 +231,15 @@ const Navbar = () => {
                         </span>
                       )}
                     </NavLink>
+                    {isAuthed && (
+                      <NavLink
+                        to="/orders"
+                        className="flex items-center gap-2 text-black hover:text-slate-700 py-1"
+                        onClick={() => setIsDropdownOpen(false)}
+                      >
+                        Order history
+                      </NavLink>
+                    )}
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -330,6 +352,18 @@ const Navbar = () => {
                         </span>
                       )}
                     </NavLink>
+                    {isAuthed && (
+                      <NavLink
+                        to="/orders"
+                        className="flex items-center gap-2 text-black hover:text-slate-700 py-1"
+                        onClick={() => {
+                          setIsDropdownOpen(false);
+                          setIsMenuOpen(false);
+                        }}
+                      >
+                        Order history
+                      </NavLink>
+                    )}
                   </motion.div>
                 )}
               </AnimatePresence>

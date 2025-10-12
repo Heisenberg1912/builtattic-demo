@@ -1,10 +1,9 @@
-import React, { useRef } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import Footer from "../components/Footer";
 import hero_img from "/src/assets/home/hero_img.jpg";
-import flash_sale from "/src/assets/home/flash_sale.png";
 import banner1 from "/src/assets/home/banner1.jpg";
 import banner2 from "/src/assets/home/banner2.jpg";
 import banner3 from "/src/assets/home/banner3.png";
@@ -42,6 +41,119 @@ const HomePage = () => {
     show: { opacity: 1, scale: 1, transition: { duration: 0.6 } },
   };
 
+  const circleMaterials = useMemo(
+    () => [
+      {
+        name: "Cement",
+        images: [
+          ultratech_cement,
+          "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=200&q=60",
+          "https://images.unsplash.com/photo-1503387762-592deb58ef4e?auto=format&fit=crop&w=200&q=60",
+        ],
+      },
+      {
+        name: "Bricks",
+        images: [
+          redbricks,
+          "https://images.unsplash.com/photo-1600607687920-4e2a9c24c2e9?auto=format&fit=crop&w=200&q=60",
+          "https://images.unsplash.com/photo-1519710164239-da123dc03ef4?auto=format&fit=crop&w=200&q=60",
+        ],
+      },
+      {
+        name: "Steel",
+        images: [
+          tmt_steelbar,
+          "https://images.unsplash.com/photo-1582719478250-6c8f9b89e0ee?auto=format&fit=crop&w=200&q=60",
+          "https://images.unsplash.com/photo-1503387762-a6f0b2f60772?auto=format&fit=crop&w=200&q=60",
+        ],
+      },
+      {
+        name: "Tiles",
+        images: [
+          ceramic_floor_tile,
+          "https://images.unsplash.com/photo-1519710164239-da123dc03ef4?auto=format&fit=crop&w=200&q=60",
+          "https://images.unsplash.com/photo-1523419409543-0c1df022bdd1?auto=format&fit=crop&w=200&q=60",
+        ],
+      },
+      {
+        name: "Wood",
+        images: [
+          timber_plank,
+          "https://images.unsplash.com/photo-1489515217757-5fd1be406fef?auto=format&fit=crop&w=200&q=60",
+          "https://images.unsplash.com/photo-1582719478250-53999edee20e?auto=format&fit=crop&w=200&q=60",
+        ],
+      },
+      {
+        name: "Paints",
+        images: [
+          paints,
+          "https://images.unsplash.com/photo-1489515217757-5fd1be406fef?auto=format&fit=crop&w=200&q=60",
+          "https://images.unsplash.com/photo-1499951360447-b19be8fe80f5?auto=format&fit=crop&w=200&q=60",
+        ],
+      },
+      {
+        name: "Glass",
+        images: [
+          tempered_glass,
+          "https://images.unsplash.com/photo-1503387762-a6f0b2f60772?auto=format&fit=crop&w=200&q=60",
+          "https://images.unsplash.com/photo-1519710164239-da123dc03ef4?auto=format&fit=crop&w=200&q=60",
+        ],
+      },
+      {
+        name: "Sand",
+        images: [
+          riversand,
+          "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=200&q=60",
+          "https://images.unsplash.com/photo-1455218873509-8097305ee378?auto=format&fit=crop&w=200&q=60",
+        ],
+      },
+    ],
+    []
+  );
+
+  const CircleItem = ({ item }) => {
+    const { name, images } = item;
+    const [index, setIndex] = useState(0);
+    const intervalRef = useRef(null);
+
+    const stopLoop = () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    };
+
+    const startLoop = () => {
+      if (images.length <= 1 || intervalRef.current) return;
+      intervalRef.current = setInterval(() => {
+        setIndex((prev) => (prev + 1) % images.length);
+      }, 700);
+    };
+
+    useEffect(() => () => stopLoop(), []);
+
+    return (
+      <motion.div
+        variants={fadeUp}
+        className="flex flex-col items-center"
+        onMouseEnter={startLoop}
+        onMouseLeave={() => {
+          stopLoop();
+          setIndex(0);
+        }}
+      >
+        <div className="w-20 h-20 rounded-full overflow-hidden shadow-md mb-2 bg-white flex items-center justify-center">
+          <img
+            src={images[index]}
+            alt={name}
+            className="w-full h-full object-cover"
+            loading="lazy"
+          />
+        </div>
+        <span className="text-sm font-medium text-gray-700">{name}</span>
+      </motion.div>
+    );
+  };
   return (
     <>
       <RegistrStrip />
@@ -229,32 +341,6 @@ const HomePage = () => {
             </div>
           </div>
 
-          {/* Middle Big Banner (Full Width) */}
-          <motion.div
-            className="relative h-[70vh] md:h-[80vh] w-full overflow-hidden shadow-2xl"
-            initial={{ opacity: 0, scale: 0.9 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            whileHover={{ scale: 1.02 }}
-          >
-            <motion.img
-              src={flash_sale}
-              alt="Big Banner"
-              className="w-full h-full object-cover"
-              whileHover={{ scale: 1.1 }}
-              transition={{ duration: 0.5 }}
-            />
-            <motion.div
-              className="absolute top-0 inset-x-0 flex flex-col items-center text-center p-8"
-              initial={{ opacity: 1 }}
-            >
-              <button className="px-6 py-3 absolute top-120 bg-white text-gray-900 rounded-full font-bold">
-                Shop
-              </button>
-            </motion.div>
-          </motion.div>
-
           {/* Bottom Row (2 banners) */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {/* Banner 3 */}
@@ -323,125 +409,9 @@ const HomePage = () => {
               show: { transition: { staggerChildren: 0.15 } },
             }}
           >
-            {/* Cement */}
-            <motion.div
-              variants={fadeUp}
-              whileHover={{ scale: 1.2, rotate: 3 }}
-              className="flex flex-col items-center"
-            >
-              <motion.img
-                src={ultratech_cement}
-                alt="Cement"
-                className="w-20 h-20 rounded-full object-cover shadow-md mb-2"
-                whileHover={{ scale: 1.3 }}
-              />
-              <span className="text-sm font-medium text-gray-700">Cement</span>
-            </motion.div>
-
-            {/* Bricks */}
-            <motion.div
-              variants={fadeUp}
-              whileHover={{ scale: 1.2, rotate: 3 }}
-              className="flex flex-col items-center"
-            >
-              <motion.img
-                src={redbricks}
-                alt="Bricks"
-                className="w-20 h-20 rounded-full object-cover shadow-md mb-2"
-                whileHover={{ scale: 1.3 }}
-              />
-              <span className="text-sm font-medium text-gray-700">Bricks</span>
-            </motion.div>
-
-            {/* Steel */}
-            <motion.div
-              variants={fadeUp}
-              whileHover={{ scale: 1.2, rotate: 3 }}
-              className="flex flex-col items-center"
-            >
-              <motion.img
-                src={tmt_steelbar}
-                alt="Steel"
-                className="w-20 h-20 rounded-full object-cover shadow-md mb-2"
-                whileHover={{ scale: 1.3 }}
-              />
-              <span className="text-sm font-medium text-gray-700">Steel</span>
-            </motion.div>
-
-            {/* Tiles */}
-            <motion.div
-              variants={fadeUp}
-              whileHover={{ scale: 1.2, rotate: 3 }}
-              className="flex flex-col items-center"
-            >
-              <motion.img
-                src={ceramic_floor_tile}
-                alt="Tiles"
-                className="w-20 h-20 rounded-full object-cover shadow-md mb-2"
-                whileHover={{ scale: 1.3 }}
-              />
-              <span className="text-sm font-medium text-gray-700">Tiles</span>
-            </motion.div>
-
-            {/* Wood */}
-            <motion.div
-              variants={fadeUp}
-              whileHover={{ scale: 1.2, rotate: 3 }}
-              className="flex flex-col items-center"
-            >
-              <motion.img
-                src={timber_plank}
-                alt="Wood"
-                className="w-20 h-20 rounded-full object-cover shadow-md mb-2"
-                whileHover={{ scale: 1.3 }}
-              />
-              <span className="text-sm font-medium text-gray-700">Wood</span>
-            </motion.div>
-
-            {/* Paints */}
-            <motion.div
-              variants={fadeUp}
-              whileHover={{ scale: 1.2, rotate: 3 }}
-              className="flex flex-col items-center"
-            >
-              <motion.img
-                src={paints}
-                alt="Paints"
-                className="w-20 h-20 rounded-full object-cover shadow-md mb-2"
-                whileHover={{ scale: 1.3 }}
-              />
-              <span className="text-sm font-medium text-gray-700">Paints</span>
-            </motion.div>
-
-            {/* Glass */}
-            <motion.div
-              variants={fadeUp}
-              whileHover={{ scale: 1.2, rotate: 3 }}
-              className="flex flex-col items-center"
-            >
-              <motion.img
-                src={tempered_glass}
-                alt="Glass"
-                className="w-20 h-20 rounded-full object-cover shadow-md mb-2"
-                whileHover={{ scale: 1.3 }}
-              />
-              <span className="text-sm font-medium text-gray-700">Glass</span>
-            </motion.div>
-
-            {/* Sand */}
-            <motion.div
-              variants={fadeUp}
-              whileHover={{ scale: 1.2, rotate: 3 }}
-              className="flex flex-col items-center"
-            >
-              <motion.img
-                src={riversand}
-                alt="Sand"
-                className="w-20 h-20 rounded-full object-cover shadow-md mb-2"
-                whileHover={{ scale: 1.3 }}
-              />
-              <span className="text-sm font-medium text-gray-700">Sand</span>
-            </motion.div>
+            {circleMaterials.map((item) => (
+              <CircleItem key={item.name} item={item} />
+            ))}
           </motion.div>
         </section>
 

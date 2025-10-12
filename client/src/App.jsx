@@ -15,12 +15,14 @@ import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 import Studio from "./pages/Studio";
 import Warehouse from "./pages/Warehouse";
+import WarehouseDetail from "./pages/WarehouseDetail";
 import Firms from "./pages/Firms";
 import CartPage from "./pages/CartPage";
 import Associates from "./pages/Associates";
 import FirmPortfolio from "./pages/FirmPortfolio";
 import Ai from "./pages/Ai";
 import CurrencyConverter from "./pages/CurrencyConverter";
+import OrderHistory from "./pages/OrderHistory";
 
 // Dashboard pages
 import SuperAdminDashboard from "./pages/dashboard/SuperAdminDashboard";
@@ -32,17 +34,7 @@ import VendorDashboard from "./pages/dashboard/SaleDashboard";
 import AdminDashboard from "./pages/dashboard/AdminDashboard";
 import StudioDetail from "./pages/StudioDetail";
 import RegistrStrip from "./components/registrstrip";
-
-// Single shared map & export (avoid redefining later)
-export const roleDashboardPath = {
-  superadmin: "/dashboard/super-admin",
-  admin: "/dashboard/admin",
-  user: "/dashboard/user",
-  associate: "/dashboard/associate",
-  firm: "/dashboard/firm",
-  client: "/dashboard/client",
-  vendor: "/dashboard/vendor",
-};
+import { roleDashboardPath } from "./constants/roles.js";
 
 const App = () => {
   // Single source of auth truth (kept if used by other parts of the app)
@@ -163,6 +155,7 @@ const App = () => {
             <Route path="/studio" element={<Studio />} />
             {/* Warehouse (formerly Blinkit) */}
             <Route path="/warehouse" element={<Warehouse />} />
+            <Route path="/warehouse/:id" element={<WarehouseDetail />} />
             {/* Firms (formerly Urban) */}
             <Route path="/firms" element={<Firms />} />
             {/* NEW: Associates and portfolio routes */}
@@ -177,6 +170,7 @@ const App = () => {
             <Route path="/urban" element={<Navigate to="/firms" replace />} />
             <Route path="/wishlist" element={<Wishlist />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/orders" element={<OrderHistory />} />
             {/* Dashboard routes */}
             <Route path="/dashboard/super-admin" element={<SuperAdminDashboard />} />
             <Route path="/dashboard/admin" element={<AdminDashboard />} />

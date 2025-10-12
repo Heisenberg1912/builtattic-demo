@@ -1,7 +1,8 @@
-import React, { useEffect, useMemo, useState } from "react";
+﻿import React, { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import Footer from "../components/Footer";
+import { fallbackStudios } from "../data/marketplace.js";
 import { fetchStudioBySlug } from "../services/marketplace.js";
 
 const StudioDetail = () => {
@@ -66,6 +67,23 @@ const StudioDetail = () => {
     [studio]
   );
 
+  const recommendations = useMemo(() => {
+    const pool = fallbackStudios.filter(
+      (item) =>
+        item.slug !== studio?.slug &&
+        item._id !== studio?._id &&
+        item.kind === "studio"
+    );
+    const preferredCategory = studio?.categories?.[0];
+    if (preferredCategory) {
+      const categoryMatches = pool.filter((item) =>
+        (item.categories || []).includes(preferredCategory)
+      );
+      if (categoryMatches.length >= 5) return categoryMatches.slice(0, 6);
+    }
+    return pool.slice(0, 6);
+  }, [studio]);
+
   const priceLabel =
     studio?.priceSqft ??
     pricing?.basePrice ??
@@ -78,7 +96,7 @@ const StudioDetail = () => {
       <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900">
         <div className="flex-1 flex items-center justify-center">
           <div className="bg-white border border-slate-200 rounded-xl px-6 py-4 text-slate-500 text-sm">
-            Loading studio…
+            Loading studioâ€¦
           </div>
         </div>
         <Footer />
@@ -167,7 +185,7 @@ const StudioDetail = () => {
               )}
               {studio.delivery?.leadTimeWeeks && (
                 <span>
-                  Lead time {studio.delivery.leadTimeWeeks} weeks ·{" "}
+                  Lead time {studio.delivery.leadTimeWeeks} weeks Â·{" "}
                   {studio.delivery.fulfilmentType}
                 </span>
               )}
@@ -185,10 +203,41 @@ const StudioDetail = () => {
             >
               Back
             </button>
-            <Link to="/studio" className="hover:text-slate-600 transition">
-              All studios
-            </Link>
-          </nav>
+          <Link to="/studio" className="hover:text-slate-600 transition">
+            All studios
+          </Link>
+        </nav>
+
+          {(studio.heroImage || gallery.length > 0) && (
+            <section className="bg-white border border-slate-200 rounded-2xl p-5 space-y-4">
+              <h2 className="text-lg font-semibold text-slate-900">Gallery</h2>
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {studio.heroImage && (
+                  <div className="md:col-span-2 lg:col-span-2 rounded-xl overflow-hidden border border-slate-100">
+                    <img
+                      src={studio.heroImage}
+                      alt={`${studio.title} hero`}
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                    />
+                  </div>
+                )}
+                {(gallery.length ? gallery : []).map((image) => (
+                  <div
+                    key={image}
+                    className="rounded-xl overflow-hidden border border-slate-100"
+                  >
+                    <img
+                      src={image}
+                      alt={`${studio.title} gallery asset`}
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                    />
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
 
           <div className="grid md:grid-cols-3 gap-10 lg:gap-16">
             <section className="md:col-span-2 space-y-8">
@@ -224,9 +273,9 @@ const StudioDetail = () => {
                       <ul className="mt-2 space-y-1 text-slate-700">
                         {pricing.tierPricing.map((tier, idx) => (
                           <li key={`${tier.min}-${tier.max}-${idx}`}>
-                            {tier.min?.toLocaleString()} –{" "}
+                            {tier.min?.toLocaleString()} â€“{" "}
                             {tier.max?.toLocaleString()}{" "}
-                            {pricing.unit || "sq.ft"} · {currency} {tier.price}
+                            {pricing.unit || "sq.ft"} Â· {currency} {tier.price}
                           </li>
                         ))}
                       </ul>
@@ -238,7 +287,7 @@ const StudioDetail = () => {
                         Fulfilment
                       </p>
                       <p className="mt-2 font-medium text-slate-900">
-                        {studio.delivery.leadTimeWeeks} weeks ·{" "}
+                        {studio.delivery.leadTimeWeeks} weeks Â·{" "}
                         {studio.delivery.fulfilmentType}
                       </p>
                     </div>
@@ -288,20 +337,51 @@ const StudioDetail = () => {
                 </article>
               )}
 
-              {gallery.length > 0 && (
+              {recommendations.length > 0 && (
                 <article className="bg-white border border-slate-200 rounded-2xl p-6 space-y-4">
-                  <h2 className="text-lg font-semibold text-slate-900">
-                    Gallery
-                  </h2>
-                  <div className="grid sm:grid-cols-2 gap-4">
-                    {gallery.map((image) => (
-                      <img
-                        key={image}
-                        src={image}
-                        alt={`${studio.title} visual`}
-                        className="w-full h-48 object-cover rounded-xl border border-slate-200"
-                        loading="lazy"
-                      />
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h2 className="text-lg font-semibold text-slate-900">For you</h2>
+                      {studio.categories?.length ? (
+                        <p className="text-xs uppercase tracking-[0.3em] text-slate-400 mt-1">
+                          Inspired by {studio.categories[0]}
+                        </p>
+                      ) : null}
+                    </div>
+                    <Link
+                      to="/studio"
+                      className="text-xs text-slate-500 hover:text-slate-700"
+                    >
+                      Browse all
+                    </Link>
+                  </div>
+                  <div className="flex gap-4 overflow-x-auto pb-2">
+                    {recommendations.map((item) => (
+                      <Link
+                        key={item._id || item.slug}
+                        to={item.slug ? `/studio/${item.slug}` : "#"}
+                        className="min-w-[220px] max-w-[240px] bg-slate-50 border border-slate-200 rounded-xl overflow-hidden hover:border-slate-300 transition flex-shrink-0"
+                      >
+                        {item.heroImage && (
+                          <img
+                            src={item.heroImage}
+                            alt={item.title}
+                            className="w-full h-32 object-cover"
+                            loading="lazy"
+                          />
+                        )}
+                        <div className="p-4 space-y-2">
+                          <p className="text-xs uppercase tracking-[0.3em] text-slate-400">
+                            {item.categories?.[0] || "Studio"}
+                          </p>
+                          <p className="text-sm font-semibold text-slate-800 line-clamp-2">
+                            {item.title}
+                          </p>
+                          <p className="text-xs text-slate-500 line-clamp-2">
+                            {item.summary || item.description}
+                          </p>
+                        </div>
+                      </Link>
                     ))}
                   </div>
                 </article>
@@ -325,7 +405,7 @@ const StudioDetail = () => {
                         <div>
                           <p className="font-medium text-slate-800">{asset.filename}</p>
                           <p className="text-xs text-slate-500">
-                            {asset.kind} · {asset.mimeType || "file"}
+                            {asset.kind} Â· {asset.mimeType || "file"}
                           </p>
                         </div>
                       </li>
@@ -356,7 +436,7 @@ const StudioDetail = () => {
                       Rating
                     </p>
                     <p className="text-lg font-semibold text-slate-900">
-                      {studio.firm?.rating?.toFixed?.(1) ?? "—"}
+                      {studio.firm?.rating?.toFixed?.(1) ?? "â€”"}
                     </p>
                   </div>
                 </div>
@@ -472,7 +552,7 @@ const StudioDetail = () => {
                           {asset.filename || asset.key}
                         </a>
                         <p className="text-xs text-slate-500">
-                          {asset.mimeType || "file"} {asset.secure ? "· secure" : ""}
+                          {asset.mimeType || "file"} {asset.secure ? "Â· secure" : ""}
                         </p>
                       </li>
                     ))}

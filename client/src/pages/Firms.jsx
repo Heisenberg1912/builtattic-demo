@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo, useState } from "react";
+﻿import React, { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import Footer from "../components/Footer";
 import RegistrStrip from "../components/registrstrip";
@@ -131,7 +132,7 @@ const Firms = () => {
 
         {loading && (
           <div className="bg-white border border-slate-200 rounded-xl p-8 text-center text-slate-500">
-            Loading firms…
+            Loading firmsGÇª
           </div>
         )}
 
@@ -180,7 +181,7 @@ const Firms = () => {
                         <p className="text-slate-400 text-xs uppercase tracking-widest mb-1">
                           Locations
                         </p>
-                        <p>{firm.locations?.join(" · ")}</p>
+                        <p>{firm.locations?.join(" -+ ")}</p>
                       </div>
                       <div>
                         <p className="text-slate-400 text-xs uppercase tracking-widest mb-1">
@@ -207,10 +208,10 @@ const Firms = () => {
                     {firm.services?.length ? (
                       <div className="bg-slate-100 border border-slate-200 rounded-lg p-4 text-sm text-slate-600">
                         <p className="text-slate-500 text-xs uppercase tracking-widest mb-2">
-                          Services
+                          Portfolio
                         </p>
                         <ul className="space-y-2">
-                          {firm.services.slice(0, 2).map((service) => (
+                          {firm.services.slice(0, 3).map((service) => (
                             <li key={service.title}>
                               <p className="font-medium text-slate-800">
                                 {service.title}
@@ -226,7 +227,7 @@ const Firms = () => {
 
                     <div className="flex flex-wrap gap-3 items-center text-sm text-slate-600">
                       <span>
-                        Team {firm.team ?? "—"} · {firm.projectsDelivered ?? 0} projects
+                        Team {firm.team ?? "-"} | {firm.projectsDelivered ?? 0} projects
                       </span>
                       {firm.avgLeadTimeWeeks && (
                         <span>Lead time {firm.avgLeadTimeWeeks} weeks</span>
@@ -253,6 +254,13 @@ const Firms = () => {
                           Visit website
                         </a>
                       )}
+                      <Link
+                        to="/firmportfolio"
+                        state={{ firm }}
+                        className="px-4 py-2.5 rounded-lg border border-slate-200 text-sm font-medium text-slate-700 hover:border-slate-300 transition"
+                      >
+                        View portfolio
+                      </Link>
                     </div>
                   </div>
                 </motion.article>
@@ -288,3 +296,10 @@ const Firms = () => {
 };
 
 export default Firms;
+
+
+
+
+
+
+

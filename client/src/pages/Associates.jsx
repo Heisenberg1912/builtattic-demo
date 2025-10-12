@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import Footer from "../components/Footer";
 import RegistrStrip from "../components/registrstrip";
@@ -202,10 +203,10 @@ const Associates = () => {
                     {associate.keyProjects?.length ? (
                       <div className="bg-white border border-slate-200 rounded-xl p-4 text-xs text-slate-500">
                         <p className="text-slate-400 uppercase tracking-widest mb-2">
-                          Recent work
+                          Portfolio highlights
                         </p>
                         <ul className="space-y-1">
-                          {associate.keyProjects.slice(0, 2).map((project) => (
+                          {associate.keyProjects.slice(0, 3).map((project) => (
                             <li key={`${project.title}-${project.year}`}>
                               <span className="text-slate-700 font-medium">
                                 {project.title}
@@ -221,9 +222,13 @@ const Associates = () => {
                       <button className="bg-slate-900 text-white px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-slate-800 transition">
                         Book discovery call
                       </button>
-                      <button className="px-4 py-2.5 rounded-lg border border-slate-200 text-sm font-medium text-slate-700 hover:border-slate-300 transition">
+                      <Link
+                        to="/associateportfolio"
+                        state={{ associate }}
+                        className="px-4 py-2.5 rounded-lg border border-slate-200 text-sm font-medium text-slate-700 hover:border-slate-300 transition"
+                      >
                         View portfolio
-                      </button>
+                      </Link>
                     </div>
                   </div>
                 </motion.article>
@@ -244,4 +249,5 @@ const Associates = () => {
 };
 
 export default Associates;
+
 

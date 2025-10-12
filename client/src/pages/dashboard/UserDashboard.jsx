@@ -12,6 +12,7 @@ import {
   X,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { fallbackStudios } from "../../data/marketplace.js";
 
 // Helpers to read user info from storage/JWT
 const safeJSON = (k) => {
@@ -188,7 +189,7 @@ function ProfileView({ savedDesignsCount, user }) {
   return (
     <>
       <section className="mb-8">
-        <h2 className="text-2xl font-bold mb-4">Welcome back, {user?.name || "User"} π‘‹</h2>
+        <h2 className="text-2xl font-bold mb-4">Welcome back, {user?.name || "User"} =ƒζο</h2>
         {/* Quick account info */}
         <div className="bg-white rounded-xl border p-4 mb-4 text-sm">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
