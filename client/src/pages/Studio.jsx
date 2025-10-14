@@ -1,11 +1,18 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
+import { HiOutlineSearch, HiOutlineSparkles } from "react-icons/hi";
 import {
-  HiOutlineSearch,
-  HiOutlineSparkles,
-  HiOutlineLocationMarker,
-} from "react-icons/hi";
+  HiOutlineSquares2X2,
+  HiOutlineHomeModern,
+  HiOutlineBuildingOffice2,
+  HiOutlineBuildingOffice,
+  HiOutlineBuildingLibrary,
+  HiOutlineCog6Tooth,
+  HiOutlineSun,
+  HiOutlineGlobeAlt,
+  HiOutlineBuildingStorefront,
+} from "react-icons/hi2";
 import RegistrStrip from "../components/registrstrip";
 import Footer from "../components/Footer";
 import { marketplaceFeatures } from "../data/marketplace.js";
@@ -13,6 +20,27 @@ import { fetchStudios } from "../services/marketplace.js";
 import { analyzeImage } from "../utils/imageSearch.js";
 
 const MotionLink = motion(Link);
+
+const DEFAULT_CATEGORY_ICON = HiOutlineBuildingOffice2;
+const CATEGORY_ICON_MAP = {
+  All: HiOutlineSquares2X2,
+  "All Categories": HiOutlineSquares2X2,
+  Residential: HiOutlineHomeModern,
+  Commercial: HiOutlineBuildingOffice2,
+  "Mixed-Use": HiOutlineBuildingOffice,
+  Mixed: HiOutlineBuildingOffice,
+  Institutional: HiOutlineBuildingLibrary,
+  Civic: HiOutlineBuildingLibrary,
+  Industrial: HiOutlineCog6Tooth,
+  Manufacturing: HiOutlineCog6Tooth,
+  Agricultural: HiOutlineSun,
+  "Agri-Tech": HiOutlineSun,
+  Recreational: HiOutlineSparkles,
+  Hospitality: HiOutlineBuildingStorefront,
+  Retail: HiOutlineBuildingStorefront,
+  Infrastructure: HiOutlineGlobeAlt,
+  Urbanism: HiOutlineGlobeAlt,
+};
 
 const Studio = () => {
   const [selectedCategory, setSelectedCategory] = useState("All");
@@ -77,6 +105,23 @@ const Studio = () => {
     });
     return ["All", ...unique];
   }, [meta, studios]);
+
+  const categoryOptions = useMemo(
+    () =>
+      categories.map((name) => {
+        const label = name === "All" ? "All Categories" : name;
+        const IconComponent =
+          CATEGORY_ICON_MAP[name] ||
+          CATEGORY_ICON_MAP[label] ||
+          DEFAULT_CATEGORY_ICON;
+        return {
+          value: name,
+          label,
+          Icon: IconComponent,
+        };
+      }),
+    [categories],
+  );
 
   const styles = useMemo(() => {
     const unique = new Set(
@@ -181,60 +226,86 @@ const Studio = () => {
       </header>
 
       <main className="flex-1 max-w-6xl mx-auto px-4 py-10 space-y-10 w-full">
-        <section className="flex flex-col lg:flex-row lg:items-center gap-4">
-          <div className="flex flex-wrap gap-2">
-            {categories.map((category) => (
-              <button
-                key={category}
-                onClick={() => setSelectedCategory(category)}
-                className={`px-4 py-2 rounded-full text-sm transition ${
-                  selectedCategory === category
-                    ? "bg-slate-900 text-white"
-                    : "bg-white border border-slate-200 text-slate-600 hover:border-slate-300"
-                }`}
-              >
-                {category}
-              </button>
-            ))}
+        <section className="bg-white border border-slate-200 rounded-2xl shadow-sm">
+          <div className="flex items-stretch gap-3 overflow-x-auto px-4 py-4 sm:px-6 sm:py-5">
+            {categoryOptions.map(({ value, label, Icon }) => {
+              const isActive = selectedCategory === value;
+              return (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => setSelectedCategory(value)}
+                  aria-pressed={isActive}
+                  className={`flex min-w-[88px] flex-col items-center gap-2 rounded-xl border px-4 py-3 text-xs font-medium transition ${
+                    isActive
+                      ? "border-slate-900 bg-slate-900/5 text-slate-900 shadow-sm"
+                      : "border-transparent bg-transparent text-slate-500 hover:text-slate-700"
+                  }`}
+                >
+                  <span
+                    className={`flex h-11 w-11 items-center justify-center rounded-full border transition ${
+                      isActive
+                        ? "border-slate-900 bg-slate-900 text-white"
+                        : "border-slate-200 bg-white text-slate-500"
+                    }`}
+                  >
+                    <Icon className="h-5 w-5" />
+                  </span>
+                  <span className="whitespace-nowrap text-[11px] uppercase tracking-[0.22em]">
+                    {label}
+                  </span>
+                </button>
+              );
+            })}
           </div>
-          <div className="flex flex-col sm:flex-row sm:items-center gap-3 flex-1">
-            <select
-              value={selectedStyle}
-              onChange={(event) => setSelectedStyle(event.target.value)}
-              className="border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-200"
-            >
-              {styles.map((style) => (
-                <option key={style} value={style}>
-                  {style}
-                </option>
-              ))}
-            </select>
-
-            <div className="flex flex-1 items-center gap-3">
-              <div className="relative flex-1">
-                <HiOutlineSearch className="w-5 h-5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                <input
-                  value={query}
-                  onChange={(event) => setQuery(event.target.value)}
-                  placeholder="Search studios, locations, or deliverables..."
-                  className="w-full bg-white border border-slate-200 rounded-lg pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-slate-200"
-                />
+          <div className="border-t border-slate-100">
+            <div className="flex flex-col gap-4 px-4 py-4 sm:px-6 sm:py-5 lg:flex-row lg:items-center">
+              <div className="w-full lg:w-56">
+                <label htmlFor="studio-style-select" className="sr-only">
+                  Filter by style
+                </label>
+                <select
+                  id="studio-style-select"
+                  value={selectedStyle}
+                  onChange={(event) => setSelectedStyle(event.target.value)}
+                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 shadow-sm transition focus:outline-none focus:ring-2 focus:ring-slate-200"
+                >
+                  {styles.map((style) => (
+                    <option key={style} value={style}>
+                      {style}
+                    </option>
+                  ))}
+                </select>
               </div>
-              <button
-                type="button"
-                onClick={handleReverseSearchClick}
-                disabled={imageSearching}
-                className="whitespace-nowrap px-4 py-2.5 rounded-lg border border-slate-200 text-sm text-slate-700 bg-white hover:border-slate-300 disabled:opacity-60"
-              >
-                {imageSearching ? "Scanning..." : "Reverse image"}
-              </button>
-              <input
-                ref={imageInputRef}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={handleImageSelected}
-              />
+
+              <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-center">
+                <div className="relative flex-1">
+                  <HiOutlineSearch className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
+                  <input
+                    value={query}
+                    onChange={(event) => setQuery(event.target.value)}
+                    placeholder="Search for studios, locations, or deliverables"
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-4 py-2.5 text-sm text-slate-700 transition focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-200"
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleReverseSearchClick}
+                    disabled={imageSearching}
+                    className="whitespace-nowrap rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:border-slate-300 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {imageSearching ? "Scanning..." : "Reverse image"}
+                  </button>
+                  <input
+                    ref={imageInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleImageSelected}
+                  />
+                </div>
+              </div>
             </div>
           </div>
         </section>
@@ -300,18 +371,42 @@ const Studio = () => {
                 studio.price ??
                 null;
               const currency = studio.currency || studio.pricing?.currency || "USD";
-              const rating =
-                typeof studio.rating === "number"
-                  ? studio.rating
-                  : typeof studio.metrics?.rating === "number"
-                  ? studio.metrics.rating
-                  : studio.firm?.rating;
-              const ratingLabel = rating ? Number(rating).toFixed(1) : "-";
-              const reviewLabel =
-                typeof studio.reviews === "number"
-                  ? studio.reviews.toLocaleString()
-                  : studio.metrics?.reviews?.toLocaleString?.() || "0";
-              const areaRange = studio.areaRange || studio.metrics?.areaRange;
+              const summarySource =
+                studio.summary ||
+                studio.description ||
+                "Explore the full catalogue to review deliverables, pricing, and project precedents.";
+              const summaryPreview =
+                summarySource.length > 180
+                  ? `${summarySource.slice(0, 177)}...`
+                  : summarySource;
+              const locationLabel =
+                [studio.location?.city, studio.location?.country]
+                  .filter(Boolean)
+                  .join(", ") ||
+                [studio.firm?.location?.city, studio.firm?.location?.country]
+                  .filter(Boolean)
+                  .join(", ");
+              const firmLogo = studio.logo || studio.firm?.logo;
+              const stylesList = [
+                studio.style,
+                ...(studio.styles || []),
+                ...(studio.firm?.styles || []),
+              ]
+                .flat()
+                .filter(Boolean);
+              const uniqueStyles = Array.from(new Set(stylesList.map(String)));
+              const styleLabel = uniqueStyles.slice(0, 3).join(", ");
+              const priceUnit =
+                studio.pricing?.unit ||
+                studio.pricing?.unitLabel ||
+                studio.unit ||
+                "sq. ft";
+              const formattedPrice =
+                priceLabel != null && Number.isFinite(Number(priceLabel))
+                  ? Number(priceLabel).toLocaleString(undefined, {
+                      maximumFractionDigits: 0,
+                    })
+                  : priceLabel;
 
               return (
                 <MotionLink
@@ -319,98 +414,52 @@ const Studio = () => {
                   to={href}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="group block bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm transition hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-slate-300"
+                  className="group flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-slate-300"
                 >
-                  <div className="aspect-[16/10] overflow-hidden">
+                  <div className="flex items-start justify-between gap-4 px-6 pt-6">
+                    <div>
+                      <h2 className="text-lg font-semibold text-slate-900 transition group-hover:text-slate-700">
+                        {studio.title}
+                      </h2>
+                      <p className="text-sm text-slate-500">
+                        {locationLabel || "Verified studio"}
+                      </p>
+                    </div>
+                    {firmLogo ? (
+                      <img
+                        src={firmLogo}
+                        alt={`${studio.firm?.name || studio.title} logo`}
+                        className="h-12 w-12 flex-shrink-0 object-contain"
+                        loading="lazy"
+                      />
+                    ) : null}
+                  </div>
+
+                  <div className="m-6 mt-4 overflow-hidden rounded-xl border border-slate-100">
                     <img
                       src={studio.heroImage}
                       alt={studio.title}
-                      className="w-full h-full object-cover transition duration-300 group-hover:scale-[1.02]"
+                      className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.02]"
                       loading="lazy"
                     />
                   </div>
-                  <div className="p-5 space-y-4">
-                    <div className="flex items-start justify-between gap-4">
-                      <div>
-                        <p className="uppercase tracking-[0.3em] text-xs text-slate-400 mb-2">
-                          {studio.categories?.join(" | ") || "Studio"}
-                        </p>
-                        <h2 className="text-xl font-semibold text-slate-900 group-hover:text-slate-700 transition">
-                          {studio.title}
-                        </h2>
-                        <p className="text-sm text-slate-500">
-                          {studio.studio || studio.firm?.name}
-                        </p>
-                      </div>
-                      {priceLabel ? (
-                        <span className="bg-slate-100 border border-slate-200 text-xs text-slate-600 px-3 py-1 rounded-full whitespace-nowrap">
-                          {currency} {priceLabel}{" "}
-                          {studio.pricing?.unit
-                            ? `/ ${studio.pricing.unit}`
-                            : "/ sq.ft"}
-                        </span>
-                      ) : null}
-                    </div>
+                  <div className="flex flex-1 flex-col space-y-3 px-6 pb-6">
+                    {priceLabel && (
+                      <p className="text-sm font-semibold text-slate-900">
+                        {currency} {formattedPrice} per {priceUnit}
+                      </p>
+                    )}
 
-                    <p className="text-sm text-slate-600 leading-relaxed">
-                      {studio.summary}
-                    </p>
+                    {styleLabel && (
+                      <p className="text-sm text-slate-500">
+                        {styleLabel}
+                      </p>
+                    )}
 
-                    <div className="grid grid-cols-2 gap-3 text-xs text-slate-600">
-                      <div className="flex items-center gap-2">
-                        <HiOutlineLocationMarker className="w-4 h-4 text-slate-400" />
-                        <span>
-                          {studio.location?.city}, {studio.location?.country}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <HiOutlineSparkles className="w-4 h-4 text-slate-400" />
-                        <span>{studio.style || studio.firm?.styles?.[0]}</span>
-                      </div>
-                      {Array.isArray(areaRange) && areaRange.length === 2 && (
-                        <div>
-                          <span className="text-slate-400">Area</span>
-                          <div className="font-medium text-slate-800">
-                            {areaRange[0].toLocaleString()} -{" "}
-                            {areaRange[1].toLocaleString()} sq.ft
-                          </div>
-                        </div>
-                      )}
-                      {studio.bedrooms?.length ? (
-                        <div>
-                          <span className="text-slate-400">Bedrooms</span>
-                          <div className="font-medium text-slate-800">
-                            {studio.bedrooms.join(" - ")}
-                          </div>
-                        </div>
-                      ) : (
-                        <div>
-                          <span className="text-slate-400">Programme</span>
-                          <div className="font-medium text-slate-800">
-                            {studio.categories?.[0] || "Mixed"}
-                          </div>
-                        </div>
-                      )}
-                    </div>
+                    <p className="text-sm text-slate-600">{summaryPreview}</p>
 
-                    <div className="flex flex-wrap gap-2">
-                      {studio.tags?.map((tag) => (
-                        <span
-                          key={tag}
-                          className="px-3 py-1 text-xs rounded-full border border-slate-200 text-slate-600 bg-slate-50"
-                        >
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-
-                    <div className="flex items-center justify-between pt-2 text-sm text-slate-500">
-                      <span>
-                        Rating {ratingLabel} | {reviewLabel} reviews
-                      </span>
-                      <span className="font-medium text-slate-900 group-hover:text-slate-700 transition">
-                        View detail -&gt;
-                      </span>
+                    <div className="pt-2 text-sm font-semibold text-slate-900 transition group-hover:text-slate-700">
+                      View details <span aria-hidden="true">{"\u2192"}</span>
                     </div>
                   </div>
                 </MotionLink>
@@ -447,3 +496,4 @@ const Studio = () => {
 };
 
 export default Studio;
+

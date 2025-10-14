@@ -17,7 +17,7 @@ const starterPrompts = [
 ];
 
 const systemIntro =
-  "Hi, I'm Builtattic Assist — your delivery co-pilot. I can surface catalogues, procurement packs, associate talent, and order fulfilment details across your workspace.";
+  "Hi, I'm VitruviAI - your delivery co-pilot. I can surface catalogues, procurement packs, associate talent, and order fulfilment details across your workspace.";
 
 const Ai = () => {
   const [messages, setMessages] = useState([
@@ -37,12 +37,12 @@ const Ai = () => {
     const reply = {
       role: "ai",
       content:
-        "Thanks! I'm assembling insights from the live catalogue, warehouse inventory, associate bench, and fulfilment pipelines. (This is placeholder text — connect the AI endpoint to surface real responses.)",
+        "Thanks! I'm assembling insights from the live catalogue, warehouse inventory, associate bench, and fulfilment pipelines. (This is placeholder text - connect the AI endpoint to surface real responses.)",
     };
     setMessages((prev) => [...prev, newMessage, reply]);
     setHighlights((prev) => [
       ...prev,
-      `⭐ ${input.slice(0, 80)}${input.length > 80 ? "…" : ""}`,
+      `* ${input.slice(0, 80)}${input.length > 80 ? "..." : ""}`,
     ]);
     setInput("");
   };
@@ -58,7 +58,7 @@ const Ai = () => {
             <Menu size={18} />
           </button>
           <h1 className="text-lg font-semibold tracking-[0.3em] text-slate-700 uppercase">
-            Builtattic Assist
+            VitruviAI
           </h1>
           <button
             onClick={() => setShowHighlights((prev) => !prev)}
@@ -147,7 +147,7 @@ const Ai = () => {
                 value={input}
                 onChange={(event) => setInput(event.target.value)}
                 className="flex-1 border border-slate-200 rounded-2xl px-4 py-3 text-sm text-slate-700 resize-none focus:outline-none focus:ring-2 focus:ring-slate-200"
-                placeholder="Ask Builtattic Assist anything…"
+                placeholder="Ask VitruviAI anything..."
               />
               <button
                 onClick={handleSend}

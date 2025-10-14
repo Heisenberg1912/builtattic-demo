@@ -70,22 +70,6 @@ const Firms = () => {
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
       <RegistrStrip />
-      <header className="bg-white border-b border-slate-200">
-        <div className="max-w-6xl mx-auto px-4 py-12 text-center">
-          <p className="uppercase tracking-[0.35em] text-xs text-slate-400 mb-4">
-            studio partners
-          </p>
-          <h1 className="text-3xl sm:text-5xl font-semibold text-slate-900 mb-4">
-            Verified architecture & design firms
-          </h1>
-          <p className="text-base sm:text-lg text-slate-600 max-w-3xl mx-auto">
-            Engage partners with proven delivery across housing, mixed-use,
-            hospitality, and civic programmes. Every firm ships packaged
-            deliverables, documentation, and on-call associate talent.
-          </p>
-        </div>
-      </header>
-
       <main className="max-w-6xl mx-auto px-4 py-10 space-y-10">
         <section className="flex flex-col lg:flex-row lg:items-center gap-4">
           <div className="flex flex-wrap gap-2">

@@ -23,6 +23,7 @@ import FirmPortfolio from "./pages/FirmPortfolio";
 import Ai from "./pages/Ai";
 import CurrencyConverter from "./pages/CurrencyConverter";
 import OrderHistory from "./pages/OrderHistory";
+import SupportChatWidget from "./components/SupportChatWidget";
 
 // Dashboard pages
 import SuperAdminDashboard from "./pages/dashboard/SuperAdminDashboard";
@@ -190,6 +191,7 @@ const App = () => {
             {/*  */}
             <Route path="/registrstrip" element={<RegistrStrip />} />
           </Routes>
+          <SupportChatWidget />
         </>
       </WishlistProvider>
     </CartProvider>

@@ -129,22 +129,6 @@ const Warehouse = () => {
 
   return (
     <div className="bg-slate-50 min-h-screen text-slate-900">
-      <header className="bg-white border-b border-slate-200">
-        <div className="max-w-6xl mx-auto px-4 py-12">
-          <p className="uppercase tracking-[0.35em] text-xs text-slate-400 mb-4">
-            procurement
-          </p>
-          <h1 className="text-3xl sm:text-5xl font-semibold text-slate-900 mb-4">
-            Builtattic Warehouse
-          </h1>
-          <p className="text-base sm:text-lg text-slate-600 max-w-3xl">
-            Source certified materials with transparent pricing, logistics, and
-            QA documentation. Every partner is vetted for compliance with
-            regional building codes.
-          </p>
-        </div>
-      </header>
-
       <main className="max-w-6xl mx-auto px-4 py-10 space-y-8">
         <div className="flex flex-wrap items-center gap-3 justify-between">
           <div className="flex flex-wrap gap-2">

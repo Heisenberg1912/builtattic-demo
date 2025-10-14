@@ -1,11 +1,14 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
+import { toast } from "react-hot-toast";
 import Footer from "../components/Footer";
 import RegistrStrip from "../components/registrstrip";
 import { fetchMarketplaceAssociates } from "../services/marketplace.js";
+import { useCart } from "../context/CartContext";
 
 const Associates = () => {
+  const { addToCart } = useCart();
   const [query, setQuery] = useState("");
   const [selectedSpecialisation, setSelectedSpecialisation] = useState("All");
   const [associates, setAssociates] = useState([]);
@@ -43,6 +46,28 @@ const Associates = () => {
     return ["All", ...new Set(all)];
   }, [associates]);
 
+  const handleBookCall = (associate) => {
+    const slot = associate.booking?.slots?.[0] || null;
+    addToCart({
+      productId: associate._id,
+      title: `${associate.title} discovery session`,
+      price: associate.rates?.hourly || associate.rates?.daily || 0,
+      quantity: 1,
+      seller: associate.user?.email || "Associate network",
+      kind: "service",
+      serviceId: associate._id,
+      schedule: slot,
+      addons: [],
+      giftMessage: "",
+      metadata: {
+        timezone: associate.booking?.timezones?.[0] || associate.timezone,
+        availability: associate.availability,
+      },
+      source: "Service",
+    });
+    toast.success(`Discovery call with ${associate.user?.email || associate.title} added to cart`);
+  };
+
   const filteredAssociates = useMemo(() => {
     return associates.filter((associate) => {
       const matchesQuery =
@@ -61,22 +86,6 @@ const Associates = () => {
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
       <RegistrStrip />
-      <header className="bg-white border-b border-slate-200">
-        <div className="max-w-6xl mx-auto px-4 py-12 text-center">
-          <p className="uppercase tracking-[0.35em] text-xs text-slate-400 mb-4">
-            associate network
-          </p>
-          <h1 className="text-3xl sm:text-5xl font-semibold text-slate-900 mb-4">
-            Hire specialist associate talent
-          </h1>
-          <p className="text-base sm:text-lg text-slate-600 max-w-3xl mx-auto">
-            On-demand computational designers, BIM leads, sustainability analysts,
-            and visualisation artists who embed with your project teams. Scope
-            engagements by the hour or by delivery package.
-          </p>
-        </div>
-      </header>
-
   <main className="flex-1 max-w-6xl mx-auto px-4 py-10 space-y-8">
         <section className="flex flex-col md:flex-row gap-3 md:items-center">
           <input
@@ -219,7 +228,10 @@ const Associates = () => {
                     ) : null}
 
                     <div className="flex flex-wrap gap-3">
-                      <button className="bg-slate-900 text-white px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-slate-800 transition">
+                      <button
+                        onClick={() => handleBookCall(associate)}
+                        className="bg-slate-900 text-white px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-slate-800 transition"
+                      >
                         Book discovery call
                       </button>
                       <Link

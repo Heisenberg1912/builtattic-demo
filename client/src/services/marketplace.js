@@ -5,6 +5,12 @@ import {
   fallbackFirms,
   fallbackAssociates,
 } from "../data/marketplace.js";
+import {
+  productCatalog,
+  productSearchRecords,
+  productBySlug,
+} from "../data/products.js";
+import { associateCatalog } from "../data/services.js";
 
 function unwrapItems(data) {
   return {
@@ -121,14 +127,14 @@ export async function fetchCatalog(params = {}) {
     }
     return data.items;
   } catch {
-    let items = [...fallbackStudios, ...fallbackMaterials];
+    let items = [...fallbackStudios, ...productCatalog];
     if (params.kind === "studio") {
       items = filterStudios(fallbackStudios, params);
     } else if (params.kind === "material") {
-      items = filterMaterials(fallbackMaterials, params);
+      items = filterProducts(productCatalog, params);
     } else if (params.search || params.category || params.style) {
       const studios = filterStudios(fallbackStudios, params);
-      const materials = filterMaterials(fallbackMaterials, params);
+      const materials = filterProducts(productCatalog, params);
       items = [...studios, ...materials];
     }
 
@@ -191,7 +197,7 @@ export async function fetchMarketplaceAssociates(params = {}) {
     const data = await tryRequest("/marketplace/associates", params);
     return data.items || [];
   } catch {
-    return filterAssociates(fallbackAssociates, params);
+    return filterAssociates(associateCatalog, params);
   }
 }
 
@@ -246,4 +252,218 @@ export async function fetchFirmById(firmId) {
     }
     throw err;
   }
+}
+
+export async function fetchProductCatalog(params = {}) {
+  try {
+    const { data } = await client.get("/marketplace/materials", { params });
+    if (!Array.isArray(data?.items)) throw new Error("Unexpected response");
+    const enriched = data.items.map(
+      (item) => productBySlug(item.slug) || { ...item, kind: "product" },
+    );
+    return {
+      items: enriched,
+      meta: {
+        total: data.meta?.total ?? enriched.length,
+        facets: buildProductFacets(enriched),
+      },
+    };
+  } catch {
+    const filtered = filterProducts(productCatalog, params);
+    return {
+      items: filtered,
+      meta: {
+        total: filtered.length,
+        facets: buildProductFacets(filtered),
+      },
+    };
+  }
+}
+
+export async function fetchProductBySlug(slug) {
+  if (!slug) return null;
+  try {
+    const { data } = await client.get(`/marketplace/materials/${slug}`);
+    const item = data?.item;
+    if (!item) throw new Error("Not found");
+    return productBySlug(item.slug) || { ...item, kind: "product" };
+  } catch {
+    return productBySlug(slug);
+  }
+}
+
+export const getProductSearchRecords = () => productSearchRecords;
+
+export const getAssociateCatalog = () => associateCatalog;
+
+function normalize(value) {
+  return String(value || "").toLowerCase();
+}
+
+function getProductPriceBounds(product) {
+  const values = [];
+  const pushPrice = (price) => {
+    if (Number.isFinite(price)) values.push(price);
+  };
+  (product.variations || []).forEach((variation) =>
+    pushPrice(Number(variation?.price)),
+  );
+  (product.offers || []).forEach((offer) => {
+    Object.values(offer?.pricingByVariation || {}).forEach((pricing) =>
+      pushPrice(Number(pricing?.price)),
+    );
+  });
+  pushPrice(Number(product?.pricing?.basePrice));
+  if (!values.length) return { min: 0, max: 0 };
+  return { min: Math.min(...values), max: Math.max(...values) };
+}
+
+function filterProducts(list, params = {}) {
+  const {
+    category,
+    search,
+    seller,
+    priceMin,
+    priceMax,
+    tags = [],
+    attributes = {},
+  } = params;
+  const sellerLc = seller ? normalize(seller) : null;
+  const tagFilters = Array.isArray(tags)
+    ? tags.filter(Boolean).map(normalize)
+    : [];
+  const attributeFilters = attributes || {};
+  const minPrice = Number(priceMin);
+  const maxPrice = Number(priceMax);
+
+  return list.filter((product) => {
+    const categoryOk =
+      !category ||
+      category === "All" ||
+      (product.categories || []).some(
+        (cat) => normalize(cat) === normalize(category),
+      );
+
+    const searchOk =
+      !search ||
+      matchesSearch(product.title, search) ||
+      matchesSearch(product.description, search) ||
+      matchesSearch(product.metafields?.vendor, search) ||
+      (product.searchKeywords || []).some((keyword) =>
+        matchesSearch(keyword, search),
+      );
+
+    const sellerOk =
+      !sellerLc ||
+      (product.offers || []).some(
+        (offer) =>
+          normalize(offer?.sellerName) === sellerLc ||
+          normalize(offer?.sellerId) === sellerLc,
+      );
+
+    const tagOk =
+      !tagFilters.length ||
+      tagFilters.every((tag) =>
+        (product.tags || []).some((productTag) => normalize(productTag) === tag),
+      );
+
+    const priceBounds = getProductPriceBounds(product);
+    const priceOk =
+      (!Number.isFinite(minPrice) || priceBounds.max >= minPrice) &&
+      (!Number.isFinite(maxPrice) || priceBounds.min <= maxPrice);
+
+    const attributesOk = Object.entries(attributeFilters).every(
+      ([code, values]) => {
+        if (!values || !values.length) return true;
+        const dimension = (product.variationDimensions || []).find(
+          (entry) => entry.code === code,
+        );
+        if (!dimension) return false;
+        const optionSet = new Set(
+          (dimension.values || []).map((option) =>
+            normalize(option?.value || option),
+          ),
+        );
+        return values
+          .map(normalize)
+          .every((value) => optionSet.has(value));
+      },
+    );
+
+    return categoryOk && searchOk && sellerOk && tagOk && priceOk && attributesOk;
+  });
+}
+
+function buildProductFacets(items = []) {
+  const categories = new Map();
+  const tags = new Map();
+  const sellers = new Map();
+  const attributes = new Map();
+  let minPrice = Number.POSITIVE_INFINITY;
+  let maxPrice = Number.NEGATIVE_INFINITY;
+
+  items.forEach((item) => {
+    (item.categories || []).forEach((category) => {
+      if (!category) return;
+      categories.set(category, (categories.get(category) || 0) + 1);
+    });
+    (item.tags || []).forEach((tag) => {
+      if (!tag) return;
+      tags.set(tag, (tags.get(tag) || 0) + 1);
+    });
+    (item.offers || []).forEach((offer) => {
+      if (offer?.sellerName) {
+        sellers.set(offer.sellerName, (sellers.get(offer.sellerName) || 0) + 1);
+      }
+      Object.values(offer?.pricingByVariation || {}).forEach((pricing) => {
+        const price = Number(pricing?.price);
+        if (!Number.isFinite(price)) return;
+        minPrice = Math.min(minPrice, price);
+        maxPrice = Math.max(maxPrice, price);
+      });
+    });
+    (item.variations || []).forEach((variation) => {
+      const price = Number(variation?.price);
+      if (Number.isFinite(price)) {
+        minPrice = Math.min(minPrice, price);
+        maxPrice = Math.max(maxPrice, price);
+      }
+    });
+    (item.variationDimensions || []).forEach((dimension) => {
+      if (!dimension?.code) return;
+      const entry =
+        attributes.get(dimension.code) || {
+          code: dimension.code,
+          label: dimension.label || dimension.code,
+          values: new Map(),
+        };
+      (dimension.values || []).forEach((option) => {
+        const value = option?.value || option;
+        if (!value) return;
+        entry.values.set(value, (entry.values.get(value) || 0) + 1);
+      });
+      attributes.set(dimension.code, entry);
+    });
+  });
+
+  const priceRange =
+    Number.isFinite(minPrice) && Number.isFinite(maxPrice)
+      ? { min: minPrice, max: maxPrice }
+      : { min: 0, max: 0 };
+
+  return {
+    categories: Array.from(categories, ([name, count]) => ({ name, count })),
+    tags: Array.from(tags, ([name, count]) => ({ name, count })),
+    sellers: Array.from(sellers, ([name, count]) => ({ name, count })),
+    attributes: Array.from(attributes.values()).map((attribute) => ({
+      code: attribute.code,
+      label: attribute.label,
+      values: Array.from(attribute.values, ([value, count]) => ({
+        value,
+        count,
+      })),
+    })),
+    priceRange,
+    currency: items?.[0]?.pricing?.currency || "INR",
+  };
 }

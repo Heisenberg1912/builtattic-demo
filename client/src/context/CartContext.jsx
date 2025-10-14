@@ -18,12 +18,26 @@ const writeLocal = (items) => localStorage.setItem(CART_LS_KEY, JSON.stringify(i
 const keyOf = (item) => item?.productId ?? item?.id ?? item?._id;
 const normalizeForLocal = (item) => {
   const id = keyOf(item);
+  const price = Number(item?.price ?? 0);
+  const quantity = Number(item?.quantity ?? 1);
   return {
     id,
     title: item?.title ?? item?.name ?? "Untitled",
-    price: Number(item?.price ?? 0),
+    price,
     image: item?.image ?? item?.img ?? "",
-    quantity: Number(item?.quantity ?? 1),
+    quantity,
+    seller: item?.seller || null,
+    variation: item?.variation || null,
+    addons: item?.addons || [],
+    giftMessage: item?.giftMessage || "",
+    gstInvoice: Boolean(item?.gstInvoice),
+    subscriptionPlan: item?.subscriptionPlan || null,
+    kind: item?.kind || "product",
+    schedule: item?.schedule || null,
+    totalPrice: Number(item?.totalPrice ?? price * quantity),
+    metadata: item?.metadata || {},
+    addressId: item?.addressId || null,
+    notes: item?.notes || "",
   };
 };
 
@@ -39,7 +53,8 @@ export const CartProvider = ({ children }) => {
     }
     try {
       const { data } = await axios.get(withBase("/api/cart"), demoHeaders);
-      setCartItems(data?.items || []);
+      const payload = Array.isArray(data?.items) ? data.items.map(normalizeForLocal) : [];
+      setCartItems(payload);
     } catch (e) {
       console.warn("Cart API unavailable, switching to localStorage:", e?.message || e);
       setApiAvailable(false);
@@ -53,7 +68,15 @@ export const CartProvider = ({ children }) => {
       const items = readLocal();
       const idx = items.findIndex((it) => keyOf(it) === normalized.id);
       if (idx >= 0) {
-        items[idx].quantity = Number(items[idx].quantity || 1) + Number(normalized.quantity || 1);
+        const existing = items[idx];
+        const nextQuantity = Number(existing.quantity || 1) + Number(normalized.quantity || 1);
+        items[idx] = {
+          ...existing,
+          ...normalized,
+          quantity: nextQuantity,
+          price: normalized.price ?? existing.price,
+          totalPrice: normalized.totalPrice ?? normalized.price * nextQuantity,
+        };
       } else {
         items.push(normalized);
       }
@@ -71,6 +94,17 @@ export const CartProvider = ({ children }) => {
           image: item?.image ?? item?.img ?? "",
           price: Number(item?.price ?? 0),
           quantity: Number(item?.quantity ?? 1),
+          seller: item?.seller || null,
+          variation: item?.variation || null,
+          addons: item?.addons || [],
+          giftMessage: item?.giftMessage || "",
+          gstInvoice: Boolean(item?.gstInvoice),
+          subscriptionPlan: item?.subscriptionPlan || null,
+          kind: item?.kind || "product",
+          schedule: item?.schedule || null,
+          totalPrice: item?.totalPrice ?? Number(item?.price ?? 0) * Number(item?.quantity ?? 1),
+          addressId: item?.addressId || null,
+          notes: item?.notes || "",
         },
         demoHeaders
       );
@@ -89,7 +123,11 @@ export const CartProvider = ({ children }) => {
       const idx = items.findIndex((it) => keyOf(it) === id);
       if (idx >= 0) {
         if (quantity <= 0) items.splice(idx, 1);
-        else items[idx].quantity = Number(quantity);
+        else {
+          items[idx].quantity = Number(quantity);
+          const price = Number(items[idx].price ?? 0);
+          items[idx].totalPrice = price * Number(quantity);
+        }
         writeLocal(items);
         setCartItems(items);
       }
