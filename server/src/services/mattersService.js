@@ -450,51 +450,51 @@ const kpisByMode = {
 
 const weatherByMode = {
   design: {
-    location: 'Design Studio HQ',
-    temperature: 72,
-    units: 'imperial',
-    conditions: 'Clear Skies',
-    humidity: 44,
-    wind_speed: 5.2,
-    wind_units: 'mph',
+    location: 'Builtattic Studio, Mumbai',
+    temperature: 32,
+    units: 'metric',
+    conditions: 'Humid with scattered clouds',
+    humidity: 68,
+    wind_speed: 3.5,
+    wind_units: 'm/s',
     insight:
-      'Clear evening ahead – tee up the hospitality suite presentation with the updated lighting renders.',
+      'Track interior finishes with the current humidity; recommend delaying veneer installation until late evening breeze.',
     provider: 'builtattic-local',
   },
   construction: {
-    location: 'Site A',
-    temperature: 27,
+    location: 'Smart Site, Ahmedabad',
+    temperature: 35,
     units: 'metric',
-    conditions: 'Partly Cloudy',
-    humidity: 58,
-    wind_speed: 6.5,
+    conditions: 'Hot and breezy',
+    humidity: 42,
+    wind_speed: 5.8,
     wind_units: 'm/s',
     insight:
-      'Monitor gusts above 7m/s for crane operations and secure perimeter scaffolding on the south elevation.',
+      'Heat stress window between 14:00-16:00. Rotate concreting crews and mist scaffolding to keep steel cool.',
     provider: 'builtattic-local',
   },
   procurement: {
-    location: 'Logistics Hub',
-    temperature: 24,
+    location: 'Navi Mumbai Logistics Park',
+    temperature: 29,
     units: 'metric',
-    conditions: 'Light Rain',
-    humidity: 70,
-    wind_speed: 3.8,
+    conditions: 'Passing showers',
+    humidity: 74,
+    wind_speed: 4.2,
     wind_units: 'm/s',
     insight:
-      'Expect minor dock delays; notify facade suppliers about offloading priority for tomorrow 08:00.',
+      'Expect intermittent rain bands; preload waterproof tarps and stagger inbound trucks to avoid queueing at Gate 3.',
     provider: 'builtattic-local',
   },
   'site-monitoring': {
-    location: 'North Perimeter',
-    temperature: 20,
+    location: 'Perimeter Deck, Bengaluru',
+    temperature: 26,
     units: 'metric',
-    conditions: 'Overcast',
-    humidity: 65,
-    wind_speed: 4.5,
+    conditions: 'Overcast with light drizzle',
+    humidity: 80,
+    wind_speed: 2.9,
     wind_units: 'm/s',
     insight:
-      'Overcast but stable; schedule thermal calibration ahead of night shift to baseline sensor drift.',
+      'Low visibility through dusk; run thermal sweep on every second patrol and log readings for the flood-monitoring dashboard.',
     provider: 'builtattic-local',
   },
 };
@@ -732,5 +732,6 @@ export const listDrills = (mode) => {
   if (mode) items = items.filter((item) => item.mode === mode);
   return deepClone(items);
 };
+
 
 

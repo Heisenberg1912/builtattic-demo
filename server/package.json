@@ -6,13 +6,14 @@
   "main": "src/index.js",
   "scripts": {
     "dev": "nodemon --watch src src/index.js",
-    "start": "npm run dev",
+    "start": "cross-env NODE_ENV=production node src/index.js",
     "seed:superadmin": "node src/seed/superAdmin.js",
     "seed:users": "node src/seed/seedUsers.js",
     "seed:marketplace": "node src/seed/seedMarketplace.js",
     "test": "echo \"(tests pending)\" && exit 0"
   },
   "dependencies": {
+    "@google-cloud/secret-manager": "^5.3.0",
     "@google/generative-ai": "^0.11.0",
     "argon2": "^0.41.1",
     "bcryptjs": "^2.4.3",

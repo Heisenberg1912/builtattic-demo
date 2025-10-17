@@ -3,7 +3,9 @@ import {
   getThread,
   ingestEmailReply,
   postChatMessage,
+  streamThread,
 } from '../controllers/supportController.js';
+import supportWebhookAuth from '../middleware/supportWebhookAuth.js';
 
 const router = Router();
 
@@ -16,6 +18,7 @@ router.use((_req, res, next) => {
 
 router.post('/chat', postChatMessage);
 router.get('/chat/:threadId', getThread);
-router.post('/chat/inbound', ingestEmailReply);
+router.get('/chat/stream/:threadId', streamThread);
+router.post('/chat/inbound', supportWebhookAuth, ingestEmailReply);
 
 export default router;

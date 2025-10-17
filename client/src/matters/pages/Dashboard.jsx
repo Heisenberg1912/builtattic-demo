@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import Topbar from "../components/Topbar"
 import Sidebar from "../components/Sidebar"
 import { useApi } from "../lib/ctx"
@@ -464,12 +464,29 @@ function ChatPanel({ activeMode, standalone = false }) {
       role: "assistant",
       persona: "architect",
       content:
-        "Hey! I'm your Builtattic associate. Ask about design, structure, site logistics or compliance—I'll route it to the right mindset.",
+        "Hi! I'm your Builtattic associate. Ask about design, structural strategies, site logistics or compliance and I'll route it to the right mindset.",
     },
   ]);
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const [error, setError] = useState("");
+  const [expanded, setExpanded] = useState(false);
+  const scrollRef = useRef(null);
+
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [messages, isTyping]);
+
+  useEffect(() => {
+    if (!expanded) return undefined;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previous;
+    };
+  }, [expanded]);
 
   const personaLabel = (persona) =>
     persona === "civil engineer" ? "Builtattic Civil Engineer" : "Builtattic Architect";
@@ -477,28 +494,27 @@ function ChatPanel({ activeMode, standalone = false }) {
   const handleSend = async () => {
     const trimmed = input.trim();
     if (!trimmed || isTyping) return;
-
     const userMessage = { role: "user", content: trimmed };
-    const nextMessages = [...messages, userMessage];
-    setMessages(nextMessages);
+    const historySnapshot = [...messages, userMessage];
+    setMessages(historySnapshot);
     setInput("");
     setIsTyping(true);
     setError("");
-
     try {
       const response = await fetch("/api/matters/assistant", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           mode: activeMode,
-          messages: nextMessages.map(({ role, content }) => ({ role, content })),
+          messages: historySnapshot.map(({ role, content }) => ({ role, content })),
         }),
       });
       const data = await response.json();
       if (!response.ok) {
         throw new Error(data.error || "Assistant is unavailable right now.");
       }
-      setMessages([...nextMessages,
+      setMessages((prev) => [
+        ...prev,
         {
           role: "assistant",
           persona: data.persona || "architect",
@@ -507,13 +523,14 @@ function ChatPanel({ activeMode, standalone = false }) {
       ]);
     } catch (err) {
       console.error(err);
-      setError(err.message || "Failed to fetch assistant response.");
-      setMessages([...nextMessages,
+      setError(err.message || "Failed to reach the assistant.");
+      setMessages((prev) => [
+        ...prev,
         {
           role: "assistant",
           persona: "architect",
           content:
-            "I ran into a snag reaching the Gemini assistant. Give it another try in a moment or contact support.",
+            "I could not contact the Gemini assistant. Please try again in a moment or reach out to support.",
         },
       ]);
     } finally {
@@ -528,64 +545,101 @@ function ChatPanel({ activeMode, standalone = false }) {
     }
   };
 
-  return (
-    <div className={`card ${standalone ? "p-0" : "p-0"} overflow-hidden`}>
-      <div className="border-b border-border px-4 py-3">
-        <div className="text-xs uppercase tracking-wide text-textMuted">Associate Chat</div>
-        <div className="text-sm text-textMuted">
-          Gemini-powered guidance for architecture &amp; civil queries.
-        </div>
-      </div>
-      <div className="flex h-[320px] flex-col bg-surfaceSoft/30">
-        <div className="flex-1 space-y-3 overflow-y-auto px-4 py-3">
-          {messages.map((entry, index) => {
-            const isAssistant = entry.role === "assistant";
-            return (
-              <div
-                key={`${entry.role}-${index}`}
-                className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm shadow-sm ${
-                  isAssistant
-                    ? "bg-white text-textPrimary border border-border"
-                    : "ml-auto bg-accent/90 text-white"
-                }`}
-              >
-                <div className="text-[11px] font-semibold uppercase tracking-wide opacity-80">
-                  {isAssistant ? personaLabel(entry.persona) : "You"}
-                </div>
-                <p className="mt-1 whitespace-pre-wrap leading-relaxed">{entry.content}</p>
-              </div>
-            );
-          })}
-          {isTyping && (
-            <div className="max-w-[60%] rounded-2xl border border-border bg-white/80 px-4 py-3 text-[12px] text-textMuted shadow-sm">
-              Drafting a response…
-            </div>
-          )}
-        </div>
-        <div className="border-t border-border bg-white px-3 py-2">
-          <textarea
-            value={input}
-            onChange={(event) => setInput(event.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Ask about structural loads, material choices, workflows…"
-            rows={2}
-            className="h-20 w-full resize-none rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent/50"
-          />
-          <div className="mt-2 flex items-center gap-2">
-            <button
-              onClick={handleSend}
-              disabled={!input.trim() || isTyping}
-              className="rounded-lg bg-accent px-3 py-2 text-sm font-medium text-white transition hover:bg-accent/90 disabled:cursor-not-allowed disabled:opacity-60"
+  const panelContent = (
+    <div className={`flex flex-1 flex-col bg-surfaceSoft/30 ${expanded ? "min-h-0" : "h-[360px]"}`}>
+      <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto px-4 py-3">
+        {messages.map((entry, index) => {
+          const isAssistant = entry.role === "assistant";
+          return (
+            <div
+              key={`${entry.role}-${index}-${entry.content.slice(0, 8)}`}
+              className={`max-w-[86%] rounded-2xl px-4 py-3 text-sm shadow-sm ${
+                isAssistant
+                  ? "bg-white/70 backdrop-blur border border-border"
+                  : "ml-auto bg-slate-900 text-white"
+              }`}
             >
-              Send
-            </button>
-            {error && <span className="text-[11px] text-red-600">{error}</span>}
+              <div className="text-[11px] font-semibold uppercase tracking-wide opacity-75">
+                {isAssistant ? personaLabel(entry.persona) : "You"}
+              </div>
+              <p className="mt-1 whitespace-pre-wrap leading-relaxed">{entry.content}</p>
+            </div>
+          );
+        })}
+        {isTyping && (
+          <div className="max-w-[60%] rounded-2xl border border-border bg-white/80 px-4 py-3 text-[12px] text-textMuted shadow-sm">
+            Drafting a response...
           </div>
+        )}
+      </div>
+      <div className="border-t border-border bg-white/70 backdrop-blur px-3 py-2">
+        <textarea
+          value={input}
+          onChange={(event) => setInput(event.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder="Ask about structural loads, material choices, workflows..."
+          rows={expanded ? 4 : 2}
+          className="w-full resize-none rounded-lg border border-border/70 bg-white/80 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent/50"
+        />
+        <div className="mt-2 flex flex-wrap items-center gap-2">
+          <button
+            onClick={handleSend}
+            disabled={!input.trim() || isTyping}
+            className="rounded-lg bg-accent px-3 py-2 text-sm font-medium text-white transition hover:bg-accent/90 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            Send
+          </button>
+          {error && <span className="text-[11px] text-red-600">{error}</span>}
         </div>
       </div>
     </div>
   );
-}function InsightsBoard({ insights = [] }) {
+
+  if (expanded) {
+    return (
+      <div className="fixed inset-4 z-[70] flex flex-col rounded-3xl border border-border bg-base/90 backdrop-blur-2xl shadow-2xl">
+        <div className="flex items-center justify-between border-b border-border/70 px-6 py-4">
+          <div>
+            <div className="text-xs uppercase tracking-wide text-textMuted">Associate Chat</div>
+            <div className="text-sm text-textMuted">
+              Gemini-powered guidance for architecture and civil queries.
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setExpanded(false)}
+            className="rounded-md border border-border px-3 py-1 text-xs font-medium text-textMuted hover:bg-surfaceSoft"
+          >
+            Exit fullscreen
+          </button>
+        </div>
+        {panelContent}
+      </div>
+    );
+  }
+
+  return (
+    <div className={`card ${standalone ? "p-0" : "p-0"} overflow-hidden`}>
+      <div className="flex items-center justify-between border-b border-border px-4 py-3">
+        <div>
+          <div className="text-xs uppercase tracking-wide text-textMuted">Associate Chat</div>
+          <div className="text-sm text-textMuted">
+            Gemini-powered guidance for architecture and civil queries.
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={() => setExpanded(true)}
+          className="rounded-md border border-border px-3 py-1 text-xs font-medium text-textMuted hover:bg-surfaceSoft"
+        >
+          Expand
+        </button>
+      </div>
+      {panelContent}
+    </div>
+  );
+}
+function InsightsBoard({ insights = [] }) {
   return (
     <div className="card space-y-3 p-4">
       <div className="flex items-center justify-between">
@@ -803,6 +857,19 @@ export default function Dashboard() {
     </div>
   )
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -76,10 +76,11 @@ const SupportChatWidget = () => {
   }, [threadId, fetchThread]);
 
   useEffect(() => {
-    if (!isOpen || !threadId) return undefined;
-    const interval = setInterval(() => fetchThread(threadId, true), 8000);
+    if (!threadId) return undefined;
+    const delay = isOpen ? 4000 : 8000;
+    const interval = setInterval(() => fetchThread(threadId, true), delay);
     return () => clearInterval(interval);
-  }, [isOpen, threadId, fetchThread]);
+  }, [threadId, isOpen, fetchThread]);
 
   const persistEmail = (value) => {
     setContactEmail(value);
@@ -181,6 +182,9 @@ const SupportChatWidget = () => {
                   onClick={() => {
                     setEmailDraft(contactEmail || "");
                     persistEmail("");
+                    setThreadId("");
+                    localStorage.removeItem(LOCAL_THREAD_KEY);
+                    setHistory([]);
                     setError("");
                   }}
                   className="text-slate-500 underline hover:text-slate-700"
@@ -257,3 +261,4 @@ const SupportChatWidget = () => {
 };
 
 export default SupportChatWidget;
+

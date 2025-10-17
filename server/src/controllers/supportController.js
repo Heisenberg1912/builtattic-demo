@@ -1,6 +1,11 @@
 import crypto from 'crypto';
 import SupportThread from '../models/supportThread.js';
 import { sendSupportEmailNotification } from '../services/email/emailService.js';
+import {
+  addSupportClient,
+  broadcastSupportThread,
+  removeSupportClient,
+} from '../utils/supportEvents.js';
 
 const SUPPORT_EMAILS = (process.env.SUPPORT_INBOX || 'tushar@builtattic.com,arnav@builtattic.com')
   .split(',')
@@ -75,8 +80,11 @@ export const postChatMessage = async (req, res, next) => {
       message: trimmedMessage,
     });
 
+    const payload = buildThreadResponse(thread);
+    broadcastSupportThread(thread.threadId, payload);
+
     applyNoCache(res);
-    return res.json(buildThreadResponse(thread));
+    return res.json(payload);
   } catch (error) {
     return next(error);
   }
@@ -136,3 +144,49 @@ export const ingestEmailReply = async (req, res, next) => {
     return next(error);
   }
 };
+
+export const streamThread = async (req, res, next) => {
+  try {
+    const { threadId } = req.params;
+    if (!threadId) {
+      return res.status(400).json({ error: 'threadId is required' });
+    }
+
+    res.writeHead(200, {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      Connection: 'keep-alive',
+    });
+    res.flushHeaders?.();
+    res.write('\n');
+
+    addSupportClient(threadId, res);
+
+    try {
+      const existing = await SupportThread.findOne({ threadId });
+      const payload = existing
+        ? buildThreadResponse(existing)
+        : { threadId, messages: [], contactEmail: null };
+      res.write(`data: ${JSON.stringify(payload)}\n\n`);
+    } catch (err) {
+      res.write(`data: ${JSON.stringify({ threadId, error: 'thread_load_failed' })}\n\n`);
+    }
+
+    const heartbeat = setInterval(() => {
+      try {
+        res.write(': ping\n\n');
+      } catch (err) {
+        clearInterval(heartbeat);
+        removeSupportClient(threadId, res);
+      }
+    }, 25000);
+
+    req.on('close', () => {
+      clearInterval(heartbeat);
+      removeSupportClient(threadId, res);
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+

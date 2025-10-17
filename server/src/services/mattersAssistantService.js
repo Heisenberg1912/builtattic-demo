@@ -26,7 +26,7 @@ const CIVIL_KEYWORDS = [
 ];
 
 const ARCHITECTURE_KEYWORDS = [
-  "façade",
+  "facade",
   "facade",
   "plan",
   "layout",
@@ -119,3 +119,5 @@ export const chatWithAssistant = async ({ messages = [], mode }) => {
     reply: text.trim(),
   };
 };
+
+
