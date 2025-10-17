@@ -6,6 +6,11 @@ import Footer from "../components/Footer";
 import RegistrStrip from "../components/registrstrip";
 import { fetchMarketplaceAssociates } from "../services/marketplace.js";
 import { useCart } from "../context/CartContext";
+import {
+  applyFallback,
+  getAssociateAvatar,
+  getAssociateFallback,
+} from "../utils/imageFallbacks.js";
 
 const Associates = () => {
   const { addToCart } = useCart();
@@ -125,6 +130,8 @@ const Associates = () => {
               const hourlyRate =
                 associate.rates?.hourly ?? associate.hourlyRate ?? null;
               const dailyRate = associate.rates?.daily ?? null;
+              const avatarImage = getAssociateAvatar(associate);
+              const avatarFallback = getAssociateFallback(associate);
               return (
                 <motion.article
                   key={associate._id}
@@ -134,14 +141,13 @@ const Associates = () => {
                 >
                   <div className="p-5 space-y-4">
                     <div className="flex items-center gap-4">
-                      {associate.avatar && (
-                        <img
-                          src={associate.avatar}
-                          alt={associate.user?.email || associate.title}
-                          className="w-20 h-20 rounded-full object-cover border border-slate-200"
-                          loading="lazy"
-                        />
-                      )}
+                      <img
+                        src={avatarImage}
+                        alt={associate.user?.email || associate.title}
+                        className="w-20 h-20 rounded-full object-cover border border-slate-200"
+                        loading="lazy"
+                        onError={(event) => applyFallback(event, avatarFallback)}
+                      />
                       <div>
                         <h2 className="text-xl font-semibold text-slate-900">
                           {associate.user?.email?.split("@")[0] || associate.title}

@@ -26,6 +26,7 @@ import paymentsRouter from './routes/payments.js';
 import marketplaceRouter from './routes/marketplace.js';
 import uploadRouter from './routes/upload.js';
 import assetsRouter from './routes/assets.js';
+import vitruviRouter from './routes/vitruvi.js';
 
 const app = express();
 
@@ -35,9 +36,16 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(compression());
 app.use(helmet());
+const rawCorsOrigins = (process.env.CORS_ORIGIN || '*')
+  .split(',')
+  .map((item) => item.trim())
+  .filter(Boolean);
+const corsOrigin =
+  rawCorsOrigins.length === 0 || rawCorsOrigins.includes('*') ? '*' : rawCorsOrigins;
+
 app.use(
   cors({
-    origin: process.env.CORS_ORIGIN || '*',
+    origin: corsOrigin,
     credentials: true,
   })
 );
@@ -74,6 +82,7 @@ app.use(['/payments', '/api/payments'], paymentsRouter);
 app.use(['/marketplace', '/api/marketplace'], marketplaceRouter);
 app.use(['/uploads', '/api/uploads'], uploadRouter);
 app.use(['/assets', '/api/assets'], assetsRouter);
+app.use(['/vitruvi', '/api/vitruvi'], vitruviRouter);
 
 /* ---------- Fallback health (works even if router changes) ---------- */
 app.get(['/health', '/api/health'], (_req, res) => {

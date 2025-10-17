@@ -21,6 +21,7 @@ import CartPage from "./pages/CartPage";
 import Associates from "./pages/Associates";
 import FirmPortfolio from "./pages/FirmPortfolio";
 import Ai from "./pages/Ai";
+import Matters from "./pages/Matters";
 import CurrencyConverter from "./pages/CurrencyConverter";
 import OrderHistory from "./pages/OrderHistory";
 import SupportChatWidget from "./components/SupportChatWidget";
@@ -152,6 +153,7 @@ const App = () => {
             {/* AI routes */}
             <Route path="/ai" element={<Ai />} />
             <Route path="/aisetting" element={<Ai />} />
+            <Route path="/matters" element={<Matters />} />
             {/* Studio (formerly Amazon) */}
             <Route path="/studio" element={<Studio />} />
             {/* Warehouse (formerly Blinkit) */}

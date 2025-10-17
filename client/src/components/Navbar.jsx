@@ -159,7 +159,8 @@ const Navbar = () => {
 
           {/* Desktop Menu */}
           <div className="hidden md:flex space-x-8 items-center">
-            <NavLink to="/ai" className="text-gray-100 hover:text-gray-100 text-xs">AI</NavLink>
+            <NavLink to="/ai" className="text-gray-100 hover:text-gray-100 text-xs">VitruviAI</NavLink>
+            <NavLink to="/matters" className="text-gray-100 hover:text-gray-100 text-xs">Matters</NavLink>
             <NavLink to="/studio" className="text-gray-100 hover:text-gray-100 text-xs">Studio</NavLink>
             <NavLink to="/firms" className="text-gray-100 hover:text-gray-100 text-xs">Firms</NavLink>
             <NavLink to="/associates" className="text-gray-100 hover:text-gray-100 text-xs">Associates</NavLink>
@@ -271,6 +272,9 @@ const Navbar = () => {
             </NavLink>
             <NavLink to="/firms" className="text-gray-100 text-xs" onClick={() => setIsMenuOpen(false)}>
               Firms
+            </NavLink>
+            <NavLink to="/matters" className="text-gray-100 text-xs" onClick={() => setIsMenuOpen(false)}>
+              Matters
             </NavLink>
             <NavLink to="/associates" className="text-gray-100 text-xs" onClick={() => setIsMenuOpen(false)}>
               Associates

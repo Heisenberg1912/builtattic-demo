@@ -10,6 +10,11 @@ import { motion, AnimatePresence } from "framer-motion";
 import { marketplaceFeatures } from "../data/marketplace.js";
 import { fetchMaterials } from "../services/marketplace.js";
 import { analyzeImage } from "../utils/imageSearch.js";
+import {
+  applyFallback,
+  getMaterialFallback,
+  getMaterialImage,
+} from "../utils/imageFallbacks.js";
 
 const Warehouse = () => {
   const [query, setQuery] = useState("");
@@ -268,6 +273,8 @@ const Warehouse = () => {
               const pricing = item.pricing || {};
               const vendor = item.metafields?.vendor || "Builtattic partner";
               const location = item.metafields?.location || "Global";
+              const materialImage = getMaterialImage(item);
+              const materialFallback = getMaterialFallback(item);
               const moq =
                 item.metafields?.moq ??
                 pricing.minQuantity ??
@@ -293,10 +300,11 @@ const Warehouse = () => {
                   <Link to={detailPath} className="block h-full">
                     <div className="relative">
                       <img
-                        src={item.heroImage}
+                        src={materialImage}
                         alt={item.title}
                         className="h-48 w-full object-cover"
                         loading="lazy"
+                        onError={(event) => applyFallback(event, materialFallback)}
                       />
                       <button
                         onClick={(event) => {

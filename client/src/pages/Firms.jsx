@@ -5,6 +5,13 @@ import Footer from "../components/Footer";
 import RegistrStrip from "../components/registrstrip";
 import { marketplaceFeatures } from "../data/marketplace.js";
 import { fetchMarketplaceFirms } from "../services/marketplace.js";
+import {
+  applyFallback,
+  getFirmAvatarFallback,
+  getFirmAvatarImage,
+  getFirmCoverFallback,
+  getFirmCoverImage,
+} from "../utils/imageFallbacks.js";
 
 const Firms = () => {
   const [selectedCategory, setSelectedCategory] = useState("All");
@@ -124,6 +131,11 @@ const Firms = () => {
           {!loading &&
             filteredFirms.map((firm) => {
               const studioCount = firm.featuredStudios?.length ?? 0;
+              const coverImage = getFirmCoverImage(firm);
+              const coverFallback = getFirmCoverFallback(firm);
+              const avatarImage = getFirmAvatarImage(firm);
+              const avatarFallback = getFirmAvatarFallback(firm);
+
               return (
                 <motion.article
                   key={firm._id}
@@ -131,24 +143,22 @@ const Firms = () => {
                   animate={{ opacity: 1, y: 0 }}
                   className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition"
                 >
-                  {firm.coverImage && (
-                    <img
-                      src={firm.coverImage}
-                      alt={firm.name}
-                      className="h-48 w-full object-cover"
-                      loading="lazy"
-                    />
-                  )}
+                  <img
+                    src={coverImage}
+                    alt={firm.name}
+                    className="h-48 w-full object-cover"
+                    loading="lazy"
+                    onError={(event) => applyFallback(event, coverFallback)}
+                  />
                   <div className="p-5 space-y-5">
                     <div className="flex items-center gap-3">
-                      {firm.gallery?.[0] && (
-                        <img
-                          src={firm.gallery[0]}
-                          alt={`${firm.name} thumbnail`}
-                          className="w-12 h-12 rounded-full border border-slate-200 object-cover"
-                          loading="lazy"
-                        />
-                      )}
+                      <img
+                        src={avatarImage}
+                        alt={`${firm.name} thumbnail`}
+                        className="w-12 h-12 rounded-full border border-slate-200 object-cover"
+                        loading="lazy"
+                        onError={(event) => applyFallback(event, avatarFallback)}
+                      />
                       <div>
                         <p className="uppercase tracking-[0.35em] text-xs text-slate-400">
                           {firm.category}

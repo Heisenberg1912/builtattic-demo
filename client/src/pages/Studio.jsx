@@ -18,6 +18,11 @@ import Footer from "../components/Footer";
 import { marketplaceFeatures } from "../data/marketplace.js";
 import { fetchStudios } from "../services/marketplace.js";
 import { analyzeImage } from "../utils/imageSearch.js";
+import {
+  applyFallback,
+  getStudioFallback,
+  getStudioImageUrl,
+} from "../utils/imageFallbacks.js";
 
 const MotionLink = motion(Link);
 
@@ -208,23 +213,6 @@ const Studio = () => {
     <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
       <RegistrStrip />
 
-      <header className="bg-white border-b border-slate-200">
-        <div className="max-w-6xl mx-auto px-4 py-12 text-center">
-          <p className="uppercase tracking-[0.35em] text-xs text-slate-400 mb-4">
-            studio catalogues
-          </p>
-          <h1 className="text-3xl sm:text-5xl font-semibold text-slate-900 mb-4">
-            Builtattic Studio Marketplace
-          </h1>
-          <p className="text-base sm:text-lg text-slate-600 max-w-3xl mx-auto">
-            Browse deploy-ready design systems, BIM deliverables, and procurement
-            kits from verified studios. Tune the filters to match your typology,
-            style, or geography, then deep-dive into deliverables that ship within
-            days.
-          </p>
-        </div>
-      </header>
-
       <main className="flex-1 max-w-6xl mx-auto px-4 py-10 space-y-10 w-full">
         <section className="bg-white border border-slate-200 rounded-2xl shadow-sm">
           <div className="flex items-stretch gap-3 overflow-x-auto px-4 py-4 sm:px-6 sm:py-5">
@@ -407,6 +395,8 @@ const Studio = () => {
                       maximumFractionDigits: 0,
                     })
                   : priceLabel;
+              const heroImage = getStudioImageUrl(studio);
+              const heroFallback = getStudioFallback(studio);
 
               return (
                 <MotionLink
@@ -437,10 +427,11 @@ const Studio = () => {
 
                   <div className="m-6 mt-4 overflow-hidden rounded-xl border border-slate-100">
                     <img
-                      src={studio.heroImage}
+                      src={heroImage}
                       alt={studio.title}
                       className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.02]"
                       loading="lazy"
+                      onError={(event) => applyFallback(event, heroFallback)}
                     />
                   </div>
                   <div className="flex flex-1 flex-col space-y-3 px-6 pb-6">
