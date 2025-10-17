@@ -1,10 +1,10 @@
-ï»¿import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import Topbar from "../components/Topbar"
 import Sidebar from "../components/Sidebar"
 import { useApi } from "../lib/ctx"
 
 const formatCurrency = (amount, currency = "USD") => {
-  if (amount === undefined || amount === null) return "â€”"
+  if (amount === undefined || amount === null) return "—"
   try {
     return new Intl.NumberFormat(undefined, {
       style: "currency",
@@ -17,7 +17,7 @@ const formatCurrency = (amount, currency = "USD") => {
 }
 
 const formatDate = (value) => {
-  if (!value) return "â€”"
+  if (!value) return "—"
   const date = new Date(value)
   return date.toLocaleDateString(undefined, {
     month: "short",
@@ -183,7 +183,7 @@ function WeatherCard({ weather, onRefresh, loading }) {
           <div>
             <div className="text-4xl font-bold text-textPrimary">
               {Math.round(weather.temperature)}
-              <span className="text-lg align-top">Â°{weather.units === "imperial" ? "F" : "C"}</span>
+              <span className="text-lg align-top">°{weather.units === "imperial" ? "F" : "C"}</span>
             </div>
             <div className="text-sm text-textMuted">{weather.conditions}</div>
           </div>
@@ -288,7 +288,7 @@ function InsightsRail({ insights = [] }) {
         </div>
       ) : (
         <div className="rounded-xl border border-dashed border-border px-3 py-6 text-center text-sm text-textMuted">
-          No insight records yetâ€”add them through the `/insights` endpoint.
+          No insight records yet—add them through the `/insights` endpoint.
         </div>
       )}
     </div>
@@ -331,11 +331,11 @@ function InventoryTable({ inventory = [] }) {
                   <td className="px-4 py-3 text-textMuted">
                     {item.quantity} {item.unit}
                   </td>
-                  <td className="px-4 py-3 text-textMuted">{item.location || "â€”"}</td>
+                  <td className="px-4 py-3 text-textMuted">{item.location || "—"}</td>
                   <td className="px-4 py-3 text-textMuted">{item.status}</td>
-                  <td className="px-4 py-3 text-textMuted">{item.supplier || "â€”"}</td>
+                  <td className="px-4 py-3 text-textMuted">{item.supplier || "—"}</td>
                   <td className="px-4 py-3 text-textMuted">
-                    {item.notes || "â€”"}
+                    {item.notes || "—"}
                   </td>
                 </tr>
               ))}
@@ -387,11 +387,11 @@ function FinanceTable({ finance = [] }) {
                   <td className="px-4 py-3 text-textMuted">
                     {formatCurrency(item.amount, item.currency)}
                   </td>
-                  <td className="px-4 py-3 text-textMuted">{item.period || "â€”"}</td>
-                  <td className="px-4 py-3 text-textMuted">{item.status || "â€”"}</td>
+                  <td className="px-4 py-3 text-textMuted">{item.period || "—"}</td>
+                  <td className="px-4 py-3 text-textMuted">{item.status || "—"}</td>
                   <td className="px-4 py-3 text-textMuted">{formatDate(item.due_date)}</td>
                   <td className="px-4 py-3 text-textMuted">
-                    {item.notes || "â€”"}
+                    {item.notes || "—"}
                   </td>
                 </tr>
               ))}
@@ -434,7 +434,7 @@ function GalleryGrid({ gallery = [] }) {
               </div>
               <div className="space-y-1 px-4 py-3 text-sm">
                 <div className="font-semibold text-textPrimary">{item.title}</div>
-                <div className="text-[12px] text-textMuted">{item.description || "â€”"}</div>
+                <div className="text-[12px] text-textMuted">{item.description || "—"}</div>
                 <div className="text-[11px] text-textMuted">
                   Uploaded by {item.uploaded_by} | {formatDate(item.uploaded_at)}
                 </div>
@@ -458,45 +458,134 @@ function GalleryGrid({ gallery = [] }) {
   )
 }
 
-function ChatPanel({ chatConfig, standalone = false }) {
-  if (!chatConfig?.embed_url) {
-    return (
-      <div className={`card space-y-3 ${standalone ? "p-6" : "p-4"}`}>
-        <div className="text-xs uppercase tracking-wide text-textMuted">Associate Chat</div>
-        <p className="text-sm text-textMuted">
-          Configure `CHAT_EMBED_URL` to embed an open-source chat client. We recommend{" "}
-          <span className="font-semibold text-textPrimary">Matrix/Element</span> or{" "}
-          <span className="font-semibold text-textPrimary">Rocket.Chat</span> for a WhatsApp-style experience.
-          Point the URL to your hosted workspace (e.g. Element web app room URL) and the widget will load here.
-        </p>
-      </div>
-    )
-  }
+function ChatPanel({ activeMode, standalone = false }) {
+  const [messages, setMessages] = useState([
+    {
+      role: "assistant",
+      persona: "architect",
+      content:
+        "Hey! I'm your Builtattic associate. Ask about design, structure, site logistics or compliance—I'll route it to the right mindset.",
+    },
+  ]);
+  const [input, setInput] = useState("");
+  const [isTyping, setIsTyping] = useState(false);
+  const [error, setError] = useState("");
+
+  const personaLabel = (persona) =>
+    persona === "civil engineer" ? "Builtattic Civil Engineer" : "Builtattic Architect";
+
+  const handleSend = async () => {
+    const trimmed = input.trim();
+    if (!trimmed || isTyping) return;
+
+    const userMessage = { role: "user", content: trimmed };
+    const nextMessages = [...messages, userMessage];
+    setMessages(nextMessages);
+    setInput("");
+    setIsTyping(true);
+    setError("");
+
+    try {
+      const response = await fetch("/api/matters/assistant", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          mode: activeMode,
+          messages: nextMessages.map(({ role, content }) => ({ role, content })),
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || "Assistant is unavailable right now.");
+      }
+      setMessages([...nextMessages,
+        {
+          role: "assistant",
+          persona: data.persona || "architect",
+          content: data.reply,
+        },
+      ]);
+    } catch (err) {
+      console.error(err);
+      setError(err.message || "Failed to fetch assistant response.");
+      setMessages([...nextMessages,
+        {
+          role: "assistant",
+          persona: "architect",
+          content:
+            "I ran into a snag reaching the Gemini assistant. Give it another try in a moment or contact support.",
+        },
+      ]);
+    } finally {
+      setIsTyping(false);
+    }
+  };
+
+  const handleKeyDown = (event) => {
+    if (event.key === "Enter" && !event.shiftKey) {
+      event.preventDefault();
+      handleSend();
+    }
+  };
 
   return (
     <div className={`card ${standalone ? "p-0" : "p-0"} overflow-hidden`}>
       <div className="border-b border-border px-4 py-3">
         <div className="text-xs uppercase tracking-wide text-textMuted">Associate Chat</div>
         <div className="text-sm text-textMuted">
-          Embedded from {chatConfig.provider || "custom"} workspace.
+          Gemini-powered guidance for architecture &amp; civil queries.
         </div>
       </div>
-      <iframe
-        src={chatConfig.embed_url}
-        title="Chat"
-        className="h-[320px] w-full border-0"
-        allow="encrypted-media"
-      />
-      {chatConfig.room_hint && (
-        <div className="border-t border-border px-4 py-2 text-[11px] uppercase tracking-wide text-textMuted">
-          Room: {chatConfig.room_hint}
+      <div className="flex h-[320px] flex-col bg-surfaceSoft/30">
+        <div className="flex-1 space-y-3 overflow-y-auto px-4 py-3">
+          {messages.map((entry, index) => {
+            const isAssistant = entry.role === "assistant";
+            return (
+              <div
+                key={`${entry.role}-${index}`}
+                className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm shadow-sm ${
+                  isAssistant
+                    ? "bg-white text-textPrimary border border-border"
+                    : "ml-auto bg-accent/90 text-white"
+                }`}
+              >
+                <div className="text-[11px] font-semibold uppercase tracking-wide opacity-80">
+                  {isAssistant ? personaLabel(entry.persona) : "You"}
+                </div>
+                <p className="mt-1 whitespace-pre-wrap leading-relaxed">{entry.content}</p>
+              </div>
+            );
+          })}
+          {isTyping && (
+            <div className="max-w-[60%] rounded-2xl border border-border bg-white/80 px-4 py-3 text-[12px] text-textMuted shadow-sm">
+              Drafting a response…
+            </div>
+          )}
         </div>
-      )}
+        <div className="border-t border-border bg-white px-3 py-2">
+          <textarea
+            value={input}
+            onChange={(event) => setInput(event.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="Ask about structural loads, material choices, workflows…"
+            rows={2}
+            className="h-20 w-full resize-none rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent/50"
+          />
+          <div className="mt-2 flex items-center gap-2">
+            <button
+              onClick={handleSend}
+              disabled={!input.trim() || isTyping}
+              className="rounded-lg bg-accent px-3 py-2 text-sm font-medium text-white transition hover:bg-accent/90 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              Send
+            </button>
+            {error && <span className="text-[11px] text-red-600">{error}</span>}
+          </div>
+        </div>
+      </div>
     </div>
-  )
-}
-
-function InsightsBoard({ insights = [] }) {
+  );
+}function InsightsBoard({ insights = [] }) {
   return (
     <div className="card space-y-3 p-4">
       <div className="flex items-center justify-between">
@@ -555,16 +644,16 @@ function SettingsPanel() {
         </p>
         <ul className="mt-2 list-disc space-y-1 pl-5 text-textPrimary/80">
           <li>
-            <code>OPENWEATHER_API_KEY</code> â€” live weather feed.
+            <code>OPENWEATHER_API_KEY</code> — live weather feed.
           </li>
           <li>
-            <code>GEMINI_API_KEY</code> â€” Google Gemini insights (model defaults to <code>gemini-1.5-flash</code>).
+            <code>GEMINI_API_KEY</code> — Google Gemini insights (model defaults to <code>gemini-1.5-flash</code>).
           </li>
           <li>
-            <code>CHAT_EMBED_URL</code> â€” embed Matrix/Element, Rocket.Chat, or another open-source chat UI.
+            <code>CHAT_EMBED_URL</code> — embed Matrix/Element, Rocket.Chat, or another open-source chat UI.
           </li>
           <li>
-            <code>MONGO_URL</code> / <code>MONGO_DB</code> â€” MongoDB connection details.
+            <code>MONGO_URL</code> / <code>MONGO_DB</code> — MongoDB connection details.
           </li>
         </ul>
       </div>
@@ -593,7 +682,6 @@ export default function Dashboard() {
     refreshAll,
     refreshWeather,
     activeSidebar,
-    chatConfig,
   } = useApi() || {}
 
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
@@ -665,7 +753,7 @@ export default function Dashboard() {
             onRefresh={() => refreshWeather?.(activeMode)}
             loading={loading?.weather}
           />
-          <ChatPanel chatConfig={chatConfig} />
+          <ChatPanel activeMode={activeMode} />
         </div>
         <div className="space-y-4">
           <GalleryPreview gallery={gallery} />
@@ -680,8 +768,8 @@ export default function Dashboard() {
     Inventory: <InventoryTable inventory={inventory} />,
     Finance: <FinanceTable finance={finance} />,
     Gallery: <GalleryGrid gallery={gallery} />,
-    Chat: <ChatPanel chatConfig={chatConfig} standalone />,
-    Message: <ChatPanel chatConfig={chatConfig} standalone />,
+    Chat: <ChatPanel activeMode={activeMode} standalone />,
+    Message: <ChatPanel activeMode={activeMode} standalone />,
     Insights: <InsightsBoard insights={insights} />,
     Settings: <SettingsPanel />,
   }
@@ -715,4 +803,10 @@ export default function Dashboard() {
     </div>
   )
 }
+
+
+
+
+
+
 

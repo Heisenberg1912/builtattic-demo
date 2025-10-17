@@ -14,8 +14,8 @@ const THEME_KEY = "matters:theme"
 
 export function ApiProvider({ children }) {
   const [theme, setThemeState] = useState(() => {
-    if (typeof window === "undefined") return "dark"
-    return localStorage.getItem(THEME_KEY) || "dark"
+    if (typeof window === "undefined") return "light"
+    return localStorage.getItem(THEME_KEY) || "light"
   })
 
   const applyTheme = useCallback((nextTheme) => {

@@ -27,6 +27,8 @@ import marketplaceRouter from './routes/marketplace.js';
 import uploadRouter from './routes/upload.js';
 import assetsRouter from './routes/assets.js';
 import vitruviRouter from './routes/vitruvi.js';
+import mattersRouter from './routes/matters.js';
+import supportRouter from './routes/support.js';
 
 const app = express();
 
@@ -83,6 +85,8 @@ app.use(['/marketplace', '/api/marketplace'], marketplaceRouter);
 app.use(['/uploads', '/api/uploads'], uploadRouter);
 app.use(['/assets', '/api/assets'], assetsRouter);
 app.use(['/vitruvi', '/api/vitruvi'], vitruviRouter);
+app.use(['/matters', '/api/matters'], mattersRouter);
+app.use(['/support', '/api/support'], supportRouter);
 
 /* ---------- Fallback health (works even if router changes) ---------- */
 app.get(['/health', '/api/health'], (_req, res) => {
