@@ -1,13 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { NavLink } from "react-router-dom";
-import { useCart } from "../context/CartContext";
-import { useWishlist } from "../context/WishlistContext";
 import main_logo from "/src/assets/main_logo/main_logo.png";
-import {
-  HiOutlineShoppingCart,
-  HiOutlineHeart,
-  HiOutlineGlobeAlt,
-} from "react-icons/hi2";
+import accountLogo from "/src/assets/icons/account-logo.png";
 import { motion, AnimatePresence } from "framer-motion";
 import { normalizeRole, resolveDashboardPath } from "../constants/roles.js";
 
@@ -56,37 +50,8 @@ function computeDashboardPath(user, role) {
 }
 /* ----------------------------------------------- */
 
-const currencyOptions = [
-  { code: "USD", country: "United States", flag: "🇺🇸", name: "US Dollar" },
-  { code: "EUR", country: "Eurozone", flag: "🇪🇺", name: "Euro" },
-  { code: "INR", country: "India", flag: "🇮🇳", name: "Indian Rupee" },
-  { code: "GBP", country: "United Kingdom", flag: "🇬🇧", name: "Pound Sterling" },
-  { code: "JPY", country: "Japan", flag: "🇯🇵", name: "Japanese Yen" },
-  { code: "AUD", country: "Australia", flag: "🇦🇺", name: "Australian Dollar" },
-  { code: "CAD", country: "Canada", flag: "🇨🇦", name: "Canadian Dollar" },
-  { code: "CHF", country: "Switzerland", flag: "🇨🇭", name: "Swiss Franc" },
-  { code: "CNY", country: "China", flag: "🇨🇳", name: "Chinese Yuan" },
-  { code: "HKD", country: "Hong Kong", flag: "🇭🇰", name: "Hong Kong Dollar" },
-  { code: "SGD", country: "Singapore", flag: "🇸🇬", name: "Singapore Dollar" },
-  { code: "KRW", country: "South Korea", flag: "🇰🇷", name: "South Korean Won" },
-  { code: "NZD", country: "New Zealand", flag: "🇳🇿", name: "New Zealand Dollar" },
-  { code: "SEK", country: "Sweden", flag: "🇸🇪", name: "Swedish Krona" },
-  { code: "NOK", country: "Norway", flag: "🇳🇴", name: "Norwegian Krone" },
-  { code: "DKK", country: "Denmark", flag: "🇩🇰", name: "Danish Krone" },
-  { code: "ZAR", country: "South Africa", flag: "🇿🇦", name: "South African Rand" },
-  { code: "BRL", country: "Brazil", flag: "🇧🇷", name: "Brazilian Real" },
-  { code: "MXN", country: "Mexico", flag: "🇲🇽", name: "Mexican Peso" },
-  { code: "AED", country: "United Arab Emirates", flag: "🇦🇪", name: "UAE Dirham" },
-  { code: "SAR", country: "Saudi Arabia", flag: "🇸🇦", name: "Saudi Riyal" },
-  { code: "THB", country: "Thailand", flag: "🇹🇭", name: "Thai Baht" },
-  { code: "IDR", country: "Indonesia", flag: "🇮🇩", name: "Indonesian Rupiah" },
-  { code: "MYR", country: "Malaysia", flag: "🇲🇾", name: "Malaysian Ringgit" },
-  { code: "PHP", country: "Philippines", flag: "🇵🇭", name: "Philippine Peso" },
-];
-
 const Navbar = () => {
-  // Currency state
-  const [selectedCurrency, setSelectedCurrency] = useState(() => {
+  const [selectedCurrency] = useState(() => {
     try {
       return localStorage.getItem("fx_to") || "INR";
     } catch {
@@ -94,34 +59,16 @@ const Navbar = () => {
     }
   });
 
-  // fire initial currency event once
   useEffect(() => {
-    window.dispatchEvent(
-      new CustomEvent("currency:change", { detail: { code: selectedCurrency } })
-    );
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const handleCurrencyChange = (code) => {
-    setSelectedCurrency(code);
-    try {
-      localStorage.setItem("fx_to", code);
-    } catch {}
     if (window.currency && typeof window.currency.setCode === "function") {
-      window.currency.setCode(code);
+      window.currency.setCode(selectedCurrency);
     }
-    window.dispatchEvent(new CustomEvent("currency:change", { detail: { code } }));
-  };
+    window.dispatchEvent(
+      new CustomEvent("currency:change", { detail: { code: selectedCurrency } }),
+    );
+  }, [selectedCurrency]);
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-
-  // Context values (safe fallback)
-  const cartCtx = (typeof useCart === "function" ? useCart() : null) || {};
-  const wishlistCtx = (typeof useWishlist === "function" ? useWishlist() : null) || {};
-  const cartItems = Array.isArray(cartCtx.cartItems) ? cartCtx.cartItems : [];
-  const wishlistItems = Array.isArray(wishlistCtx.wishlistItems) ? wishlistCtx.wishlistItems : [];
-  const cartCount = cartItems.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
-  const wishlistCount = wishlistItems.length;
 
   const [authState, setAuthState] = useState(() => readAuthSnapshot());
   const [user, setUser] = useState(() => getCurrentUser());
@@ -146,6 +93,34 @@ const Navbar = () => {
 
   // Dropdown state
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownItems = useMemo(
+    () => [
+      { label: "Dashboard", to: isAuthed ? dashboardPath : "/login" },
+      { label: "Account", to: "/account" },
+      { label: "Wishlist", to: "/wishlist" },
+      { label: "Cart", to: "/cart" },
+      { label: "Settings", to: "/settings" },
+    ],
+    [isAuthed, dashboardPath],
+  );
+
+  useEffect(() => {
+    if (!isDropdownOpen) return undefined;
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") {
+        setIsDropdownOpen(false);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isDropdownOpen]);
+
+  const closeDropdown = (shouldCloseMenu = false) => {
+    setIsDropdownOpen(false);
+    if (shouldCloseMenu) {
+      setIsMenuOpen(false);
+    }
+  };
 
   return (
     <>
@@ -153,105 +128,35 @@ const Navbar = () => {
         <div className="max-w-7xl mx-auto px-4 flex items-center justify-between h-14">
           {/* Logo */}
           <NavLink to="/" className="flex items-center text-xl font-bold text-gray-100">
-            <img src={main_logo} alt="Builtattic Logo" className="h-12 w-12 object-contain" />
-            builtattic.
+            <span className="flex items-center text-inherit leading-none">
+              <img src={main_logo} alt="Builtattic Logo" className="h-10 w-auto object-contain" />
+              <span className="-ml-2 text-[1.50rem] font-semibold tracking-[0.01em]">uiltattic.</span>
+            </span>
           </NavLink>
 
           {/* Desktop Menu */}
           <div className="hidden md:flex space-x-8 items-center">
             <NavLink to="/ai" className="text-gray-100 hover:text-gray-100 text-xs">VitruviAI</NavLink>
+            <NavLink to="/studio" className="text-gray-100 hover:text-gray-100 text-xs">Design Studio</NavLink>
+            <NavLink to="/associates" className="text-gray-100 hover:text-gray-100 text-xs">Skill Studio</NavLink>
+            <NavLink to="/warehouse" className="text-gray-100 hover:text-gray-100 text-xs">Material Studio</NavLink>
             <NavLink to="/matters" className="text-gray-100 hover:text-gray-100 text-xs">Matters</NavLink>
-            <NavLink to="/studio" className="text-gray-100 hover:text-gray-100 text-xs">Studio</NavLink>
-            <NavLink to="/firms" className="text-gray-100 hover:text-gray-100 text-xs">Firms</NavLink>
-            <NavLink to="/associates" className="text-gray-100 hover:text-gray-100 text-xs">Associates</NavLink>
-            <NavLink to="/warehouse" className="text-gray-100 hover:text-gray-100 text-xs">Warehouse</NavLink>
 
-            {/* Avatar dropdown */}
-            <div className="relative">
-              <button
-                className="flex items-center justify-center w-8 h-8 rounded-full border-2 border-gray-300 bg-white hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-400 overflow-hidden transition"
-                onClick={() => setIsDropdownOpen((v) => !v)}
-                aria-haspopup="true"
-                aria-expanded={isDropdownOpen}
-                title="Open user menu"
-              >
-                <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                  <circle cx="12" cy="8" r="4" />
-                  <path d="M4 20c0-4 4-7 8-7s8 3 8 7" />
-                </svg>
-              </button>
-              <AnimatePresence>
-                {isDropdownOpen && (
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.95, y: -10 }}
-                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.95, y: -10 }}
-                    transition={{ duration: 0.18 }}
-                    className="absolute right-0 mt-2 w-56 bg-white border border-gray-200 rounded-md shadow-lg z-50 flex flex-col gap-2 p-3"
-                    style={{ originY: 0, originX: 1 }}
-                  >
-                    {/* Currency Selector */}
-                    <div className="flex items-center gap-2">
-                      <HiOutlineGlobeAlt className="text-xl text-gray-700" />
-                      <select
-                        value={selectedCurrency}
-                        onChange={(e) => handleCurrencyChange(e.target.value)}
-                        className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded-md bg-white"
-                        title="Select currency"
-                      >
-                        {currencyOptions.map((c) => (
-                          <option key={c.code} value={c.code}>
-                            {c.flag} {c.code}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <NavLink
-                      to="/wishlist"
-                      className="flex items-center gap-2 text-black hover:text-pink-600 py-1"
-                      onClick={() => setIsDropdownOpen(false)}
-                    >
-                      <HiOutlineHeart className="text-xl" />
-                      Wishlist
-                      {wishlistCount > 0 && (
-                        <span className="ml-auto bg-pink-500 text-white rounded-full text-xs font-bold px-2">
-                          {wishlistCount}
-                        </span>
-                      )}
-                    </NavLink>
-                    <NavLink
-                      to="/cart"
-                      className="flex items-center gap-2 text-black hover:text-blue-600 py-1"
-                      onClick={() => setIsDropdownOpen(false)}
-                    >
-                      <HiOutlineShoppingCart className="text-xl" />
-                      Cart
-                      {cartCount > 0 && (
-                        <span className="ml-auto bg-blue-600 text-white rounded-full text-xs font-bold px-2">
-                          {cartCount}
-                        </span>
-                      )}
-                    </NavLink>
-                    {isAuthed && (
-                      <NavLink
-                        to="/orders"
-                        className="flex items-center gap-2 text-black hover:text-slate-700 py-1"
-                        onClick={() => setIsDropdownOpen(false)}
-                      >
-                        Order history
-                      </NavLink>
-                    )}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
+            <button
+              className="group inline-flex items-center justify-center text-gray-100 transition hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
+              onClick={() => setIsDropdownOpen((v) => !v)}
+              aria-haspopup="true"
+              aria-expanded={isDropdownOpen}
+              title="Open user menu"
+            >
+              <img
+                src={accountLogo}
+                alt="Account menu"
+                className="h-6 w-6 object-contain transition group-hover:brightness-110"
+              />
+            </button>
 
-            {/* Auth-aware link */}
-            {isAuthed ? (
-              <NavLink to={dashboardPath} className="text-gray-100 hover:text-gray-100 text-xs">
-                Dashboard
-              </NavLink>
-            ) : (
+            {isAuthed ? null : (
               <NavLink to="/login" className="text-gray-100 hover:text-gray-300 text-xs">
                 Login
               </NavLink>
@@ -267,121 +172,40 @@ const Navbar = () => {
         {/* Mobile Menu */}
         {isMenuOpen && (
           <div className="md:hidden px-4 pb-4 flex flex-col space-y-3">
-            <NavLink to="/studio" className="text-gray-100 text-xs" onClick={() => setIsMenuOpen(false)}>
-              Studio
+            <NavLink to="/ai" className="text-gray-100 text-xs" onClick={() => setIsMenuOpen(false)}>
+              VitruviAI
             </NavLink>
-            <NavLink to="/firms" className="text-gray-100 text-xs" onClick={() => setIsMenuOpen(false)}>
-              Firms
+            <NavLink to="/studio" className="text-gray-100 text-xs" onClick={() => setIsMenuOpen(false)}>
+              Design Studio
+            </NavLink>
+            <NavLink to="/associates" className="text-gray-100 text-xs" onClick={() => setIsMenuOpen(false)}>
+              Skill Studio
+            </NavLink>
+            <NavLink to="/warehouse" className="text-gray-100 text-xs" onClick={() => setIsMenuOpen(false)}>
+              Material Studio
             </NavLink>
             <NavLink to="/matters" className="text-gray-100 text-xs" onClick={() => setIsMenuOpen(false)}>
               Matters
             </NavLink>
-            <NavLink to="/associates" className="text-gray-100 text-xs" onClick={() => setIsMenuOpen(false)}>
-              Associates
-            </NavLink>
-            <NavLink to="/warehouse" className="text-gray-100 text-xs" onClick={() => setIsMenuOpen(false)}>
-              Warehouse
-            </NavLink>
 
-            {/* Dropdown (mobile) */}
-            <div className="relative">
-              <button
-                className="flex items-center justify-center w-8 h-8 rounded-full border-2 border-gray-400 bg-gray-300 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-400 overflow-hidden transition"
-                onClick={() => setIsDropdownOpen((v) => !v)}
-                aria-haspopup="true"
-                aria-expanded={isDropdownOpen}
-                title="Open user menu"
-              >
-                <svg className="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                  <circle cx="12" cy="8" r="4" />
-                  <path d="M4 20c0-4 4-7 8-7s8 3 8 7" />
-                </svg>
-              </button>
-              <AnimatePresence>
-                {isDropdownOpen && (
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.95, y: -10 }}
-                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.95, y: -10 }}
-                    transition={{ duration: 0.18 }}
-                    className="absolute right-0 mt-2 w-56 bg-white border border-gray-200 rounded-md shadow-lg z-50 flex flex-col gap-2 p-3"
-                    style={{ originY: 0, originX: 1 }}
-                  >
-                    <div className="flex items-center gap-2">
-                      <HiOutlineGlobeAlt className="text-xl text-black" />
-                      <select
-                        value={selectedCurrency}
-                        onChange={(e) => handleCurrencyChange(e.target.value)}
-                        className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded-md bg-white"
-                        title="Select currency"
-                      >
-                        {currencyOptions.map((c) => (
-                          <option key={c.code} value={c.code}>
-                            {c.flag} {c.code}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
+            <button
+              className="inline-flex items-center justify-center self-start text-gray-100 transition hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
+              onClick={() => {
+                setIsDropdownOpen(true);
+                setIsMenuOpen(false);
+              }}
+              aria-haspopup="true"
+              aria-expanded={isDropdownOpen}
+              title="Open user menu"
+            >
+              <img
+                src={accountLogo}
+                alt="Account menu"
+                className="h-6 w-6 object-contain transition hover:brightness-110"
+              />
+            </button>
 
-                    <NavLink
-                      to="/wishlist"
-                      className="flex items-center gap-2 text-black hover:text-pink-600 py-1"
-                      onClick={() => {
-                        setIsDropdownOpen(false);
-                        setIsMenuOpen(false);
-                      }}
-                    >
-                      <HiOutlineHeart className="text-xl" />
-                      Wishlist
-                      {wishlistCount > 0 && (
-                        <span className="ml-auto bg-pink-500 text-white rounded-full text-xs font-bold px-2">
-                          {wishlistCount}
-                        </span>
-                      )}
-                    </NavLink>
-
-                    <NavLink
-                      to="/cart"
-                      className="flex items-center gap-2 text-black hover:text-blue-600 py-1"
-                      onClick={() => {
-                        setIsDropdownOpen(false);
-                        setIsMenuOpen(false);
-                      }}
-                    >
-                      <HiOutlineShoppingCart className="text-xl" />
-                      Cart
-                      {cartCount > 0 && (
-                        <span className="ml-auto bg-blue-600 text-white rounded-full text-xs font-bold px-2">
-                          {cartCount}
-                        </span>
-                      )}
-                    </NavLink>
-                    {isAuthed && (
-                      <NavLink
-                        to="/orders"
-                        className="flex items-center gap-2 text-black hover:text-slate-700 py-1"
-                        onClick={() => {
-                          setIsDropdownOpen(false);
-                          setIsMenuOpen(false);
-                        }}
-                      >
-                        Order history
-                      </NavLink>
-                    )}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-
-            {isAuthed ? (
-              <NavLink
-                to={dashboardPath}
-                className="text-gray-100 text-xs"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Dashboard
-              </NavLink>
-            ) : (
+            {isAuthed ? null : (
               <NavLink
                 to="/login"
                 className="text-gray-100 text-xs"
@@ -393,6 +217,40 @@ const Navbar = () => {
           </div>
         )}
       </nav>
+
+      <AnimatePresence>
+        {isDropdownOpen && (
+          <motion.div
+            className="fixed inset-0 z-[70] flex items-start justify-center bg-black/55 backdrop-blur-sm pt-24 md:pt-28"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => closeDropdown(true)}
+          >
+            <motion.div
+              initial={{ opacity: 0, y: -16 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -16 }}
+              transition={{ duration: 0.18 }}
+              className="w-56 rounded-[28px] bg-black/92 text-white shadow-[0_24px_60px_rgba(0,0,0,0.55)] ring-1 ring-white/15"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <nav className="flex flex-col divide-y divide-white/10 text-center text-sm font-semibold tracking-wide">
+                {dropdownItems.map((item) => (
+                  <NavLink
+                    key={item.label}
+                    to={item.to}
+                    className="px-6 py-3 hover:bg-white/10 transition"
+                    onClick={() => closeDropdown(true)}
+                  >
+                    {item.label}
+                  </NavLink>
+                ))}
+              </nav>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   );
 };

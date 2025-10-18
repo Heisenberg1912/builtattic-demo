@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import { HiOutlineSearch, HiOutlineSparkles } from "react-icons/hi";
 import {
@@ -47,10 +47,34 @@ const CATEGORY_ICON_MAP = {
   Urbanism: HiOutlineGlobeAlt,
 };
 
+const CATEGORY_DISPLAY_ORDER = [
+  "All",
+  "Residential",
+  "Commercial",
+  "Mixed-Use",
+  "Institutional",
+  "Industrial",
+  "Agricultural",
+  "Recreational",
+  "Infrastructure",
+];
+
+const BASE_CATEGORIES = [
+  "Residential",
+  "Commercial",
+  "Mixed-Use",
+  "Institutional",
+  "Industrial",
+  "Agricultural",
+  "Recreational",
+  "Infrastructure",
+];
+
 const Studio = () => {
-  const [selectedCategory, setSelectedCategory] = useState("All");
+  const location = useLocation();
+  const [selectedCategory, setSelectedCategory] = useState(() => location.state?.category || "All");
   const [selectedStyle, setSelectedStyle] = useState("All");
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState(() => location.state?.search || "");
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [studios, setStudios] = useState([]);
   const [meta, setMeta] = useState({
@@ -69,6 +93,16 @@ const Studio = () => {
     const timer = setTimeout(() => setDebouncedQuery(query.trim()), 350);
     return () => clearTimeout(timer);
   }, [query]);
+
+  useEffect(() => {
+    const { category: incomingCategory, search: incomingSearch } = location.state || {};
+    if (incomingCategory) {
+      setSelectedCategory(incomingCategory);
+    }
+    if (incomingSearch) {
+      setQuery(incomingSearch);
+    }
+  }, [location.state]);
 
   useEffect(() => {
     let cancelled = false;
@@ -102,9 +136,8 @@ const Studio = () => {
   }, [selectedCategory, selectedStyle, debouncedQuery]);
 
   const categories = useMemo(() => {
-    const unique = new Set(
-      (meta?.facets?.categories || []).map((facet) => facet.name)
-    );
+    const unique = new Set(BASE_CATEGORIES);
+    (meta?.facets?.categories || []).forEach((facet) => unique.add(facet.name));
     studios.forEach((studio) => {
       (studio.categories || []).forEach((category) => unique.add(category));
     });
@@ -127,6 +160,26 @@ const Studio = () => {
       }),
     [categories],
   );
+
+  const orderedCategoryOptions = useMemo(() => {
+    const priority = new Map(
+      CATEGORY_DISPLAY_ORDER.map((name, index) => [name, index]),
+    );
+    const baseIndex = priority.size;
+    return categoryOptions
+      .map((option, index) => ({ option, index }))
+      .sort((a, b) => {
+        const aIndex = priority.has(a.option.value)
+          ? priority.get(a.option.value)
+          : baseIndex + a.index;
+        const bIndex = priority.has(b.option.value)
+          ? priority.get(b.option.value)
+          : baseIndex + b.index;
+        if (aIndex !== bIndex) return aIndex - bIndex;
+        return a.option.label.localeCompare(b.option.label);
+      })
+      .map(({ option }) => option);
+  }, [categoryOptions]);
 
   const styles = useMemo(() => {
     const unique = new Set(
@@ -215,8 +268,8 @@ const Studio = () => {
 
       <main className="flex-1 max-w-6xl mx-auto px-4 py-10 space-y-10 w-full">
         <section className="bg-white border border-slate-200 rounded-2xl shadow-sm">
-          <div className="flex items-stretch gap-3 overflow-x-auto px-4 py-4 sm:px-6 sm:py-5">
-            {categoryOptions.map(({ value, label, Icon }) => {
+          <div className="flex items-stretch gap-6 overflow-x-auto px-4 py-5 sm:px-6">
+            {orderedCategoryOptions.map(({ value, label, Icon }) => {
               const isActive = selectedCategory === value;
               return (
                 <button
@@ -224,24 +277,28 @@ const Studio = () => {
                   type="button"
                   onClick={() => setSelectedCategory(value)}
                   aria-pressed={isActive}
-                  className={`flex min-w-[88px] flex-col items-center gap-2 rounded-xl border px-4 py-3 text-xs font-medium transition ${
+                  className={`group flex min-w-[96px] flex-col items-center gap-2 px-2 py-1 text-sm font-medium transition ${
                     isActive
-                      ? "border-slate-900 bg-slate-900/5 text-slate-900 shadow-sm"
-                      : "border-transparent bg-transparent text-slate-500 hover:text-slate-700"
+                      ? "text-slate-900"
+                      : "text-slate-500 hover:text-slate-700"
                   }`}
                 >
-                  <span
-                    className={`flex h-11 w-11 items-center justify-center rounded-full border transition ${
+                  <Icon
+                    className={`h-8 w-8 transition ${
                       isActive
-                        ? "border-slate-900 bg-slate-900 text-white"
-                        : "border-slate-200 bg-white text-slate-500"
+                        ? "text-slate-900"
+                        : "text-slate-400 group-hover:text-slate-600"
                     }`}
-                  >
-                    <Icon className="h-5 w-5" />
-                  </span>
-                  <span className="whitespace-nowrap text-[11px] uppercase tracking-[0.22em]">
+                  />
+                  <span className="whitespace-nowrap text-xs font-medium tracking-tight">
                     {label}
                   </span>
+                  <span
+                    aria-hidden="true"
+                    className={`block h-0.5 w-8 rounded-full transition ${
+                      isActive ? "bg-slate-900" : "bg-transparent"
+                    }`}
+                  />
                 </button>
               );
             })}

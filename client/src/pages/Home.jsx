@@ -1,6 +1,6 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import Footer from "../components/Footer";
 import hero_img from "/src/assets/home/hero_img.jpg";
@@ -9,6 +9,7 @@ import banner2 from "/src/assets/home/banner2.jpg";
 import banner3 from "/src/assets/home/banner3.png";
 import banner4 from "/src/assets/home/banner4.png";
 // import circle images
+import RegistrStrip from "../components/registrstrip";
 import ultratech_cement from "/src/assets/home/ultratech_cement.webp";
 import redbricks from "/src/assets/home/redbricks.jpg";
 import riversand from "/src/assets/home/riversand.jpeg";
@@ -17,10 +18,78 @@ import ceramic_floor_tile from "/src/assets/home/ceramic_floor_tile.jpeg";
 import paints from "/src/assets/home/paints.webp";
 import timber_plank from "/src/assets/home/timber_plank.jpeg";
 import tempered_glass from "/src/assets/home/tempered_glass.jpeg";
-import RegistrStrip from "../components/registrstrip";
+
+const SEARCH_MAPPINGS = [
+  {
+    keywords: ["house", "home", "residential", "villa", "bungalow"],
+    to: "/studio",
+    state: { category: "Residential" },
+  },
+  {
+    keywords: ["mall", "shop", "retail", "commercial", "office", "workspace"],
+    to: "/studio",
+    state: { category: "Commercial" },
+  },
+  {
+    keywords: ["mixed-use", "mixed use", "urban mix", "hybrid"],
+    to: "/studio",
+    state: { category: "Mixed-Use" },
+  },
+  {
+    keywords: ["institution", "institutional", "school", "college", "university"],
+    to: "/studio",
+    state: { category: "Institutional" },
+  },
+  {
+    keywords: ["industrial", "factory", "plant", "manufacturing"],
+    to: "/studio",
+    state: { category: "Industrial" },
+  },
+  {
+    keywords: ["agricultural", "farm", "barn", "agri"],
+    to: "/studio",
+    state: { category: "Agricultural" },
+  },
+  {
+    keywords: ["recreational", "park", "play", "leisure", "stadium"],
+    to: "/studio",
+    state: { category: "Recreational" },
+  },
+  {
+    keywords: ["infrastructure", "bridge", "transit", "transport"],
+    to: "/studio",
+    state: { category: "Infrastructure" },
+  },
+  {
+    keywords: ["material", "cement", "steel", "sand", "warehouse"],
+    to: "/warehouse",
+  },
+  {
+    keywords: ["associate", "skill", "freelancer", "talent"],
+    to: "/associates",
+  },
+  {
+    keywords: ["firm", "vendor", "partner"],
+    to: "/firms",
+  },
+  {
+    keywords: ["order", "history", "ops"],
+    to: "/matters",
+  },
+  {
+    keywords: ["ai", "assistant", "vitruvi", "vitruviai"],
+    to: "/ai",
+  },
+  {
+    keywords: ["buy", "shop", "product", "catalog"],
+    to: "/buy",
+  },
+];
 
 const HomePage = () => {
   const scrollRef = useRef(null);
+  const navigate = useNavigate();
+  const [searchQuery, setSearchQuery] = useState("");
 
   const scrollLeft = () => {
     scrollRef.current.scrollBy({ left: -300, behavior: "smooth" });
@@ -41,7 +110,7 @@ const HomePage = () => {
     show: { opacity: 1, scale: 1, transition: { duration: 0.6 } },
   };
 
-  const circleMaterials = useMemo(
+const circleMaterials = useMemo(
     () => [
       {
         name: "Cement",
@@ -111,49 +180,44 @@ const HomePage = () => {
     []
   );
 
-  const CircleItem = ({ item }) => {
-    const { name, images } = item;
-    const [index, setIndex] = useState(0);
-    const intervalRef = useRef(null);
 
-    const stopLoop = () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
+  const resolveSearchDestination = useCallback(
+    (rawValue) => {
+      const trimmed = rawValue.trim();
+      if (!trimmed) return null;
+      const normalized = trimmed.toLowerCase();
+      const match = SEARCH_MAPPINGS.find(({ keywords }) =>
+        keywords.some((keyword) => normalized.includes(keyword)),
+      );
+      if (match) {
+        return {
+          to: match.to,
+          state: match.state ? { ...match.state, search: trimmed } : { search: trimmed },
+        };
       }
-    };
+      return { to: "/studio", state: { search: trimmed } };
+    },
+    [],
+  );
 
-    const startLoop = () => {
-      if (images.length <= 1 || intervalRef.current) return;
-      intervalRef.current = setInterval(() => {
-        setIndex((prev) => (prev + 1) % images.length);
-      }, 700);
-    };
+  const handleSearch = useCallback(
+    (value) => {
+      const destination = resolveSearchDestination(value ?? searchQuery);
+      if (!destination) return;
+      navigate(destination.to, { state: destination.state });
+      setSearchQuery("");
+    },
+    [navigate, resolveSearchDestination, searchQuery],
+  );
 
-    useEffect(() => () => stopLoop(), []);
+  const handleSubmit = useCallback(
+    (event) => {
+      event.preventDefault();
+      handleSearch();
+    },
+    [handleSearch],
+  );
 
-    return (
-      <motion.div
-        variants={fadeUp}
-        className="flex flex-col items-center"
-        onMouseEnter={startLoop}
-        onMouseLeave={() => {
-          stopLoop();
-          setIndex(0);
-        }}
-      >
-        <div className="w-20 h-20 rounded-full overflow-hidden shadow-md mb-2 bg-white flex items-center justify-center">
-          <img
-            src={images[index]}
-            alt={name}
-            className="w-full h-full object-cover"
-            loading="lazy"
-          />
-        </div>
-        <span className="text-sm font-medium text-gray-700">{name}</span>
-      </motion.div>
-    );
-  };
   return (
     <>
       <RegistrStrip />
@@ -174,7 +238,6 @@ const HomePage = () => {
             src={hero_img}
             alt="Preview"
             variants={scaleIn}
-            whileHover={{ scale: 1.02 }}
             style={{
               position: "absolute",
               top: 0,
@@ -191,35 +254,23 @@ const HomePage = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
-            className="mt-5"
-            style={{
-              position: "absolute",
-              top: "5%",
-              left: "40%",
-              transform: "translate(-50%, -50%)",
-              color: "white",
-              textAlign: "center",
-              zIndex: 10,
-            }}
+            className="absolute inset-0 z-10 flex flex-col items-center justify-start text-center text-white pt-20 sm:pt-24 md:pt-28 lg:pt-32 gap-6"
           >
-            <h1 style={{ fontSize: "2.5rem", fontWeight: "bold" }}>
-              Journey Begins
-            </h1>
-            <p
-              style={{
-                marginTop: "10px",
-                fontSize: "1.2rem",
-                fontWeight: "600",
-              }}
-            >
-              The journery starts this very <br /> minute. Know what it is
-              about.
-            </p>
-            <button className="bg-white text-gray-800 px-6 py-2 rounded-full shadow-md font-bold hover:bg-gray-100 hover:shadow-lg transition-all duration-300 mt-8">
+            <div className="px-4">
+              <h1 className="text-3xl sm:text-4xl md:text-4xl font-extrabold tracking-tight">
+                Journey Begins
+              </h1>
+              <p className="mt-4 text-base sm:text-lg md:text-xl font-semibold text-white/90">
+                The journey starts this very minute.<br></br>Know what it is about.
+              </p>
+            </div>
+            <button className="bg-white text-gray-800 px-6 sm:px-8 py-2 sm:py-3 rounded-full shadow-md font-bold transition-all duration-300">
               Watch the film
             </button>
           </motion.div>
         </motion.section>
+
+        <div className="border-t-8 border-white"></div>
 
         {/* GIF + Search Section */}
         <div className="relative w-full h-screen flex items-center justify-center px-4 text-center">
@@ -249,27 +300,39 @@ const HomePage = () => {
 
             {/* Search Bar */}
             <div className="flex justify-center mb-6 w-full max-w-md mx-auto">
-              <div className="relative w-full">
+              <form onSubmit={handleSubmit} className="relative w-full flex items-center">
+                <label htmlFor="hero-search" className="sr-only">
+                  Search for products or categories
+                </label>
                 <input
+                  id="hero-search"
                   type="text"
+                  value={searchQuery}
+                  onChange={(event) => setSearchQuery(event.target.value)}
                   placeholder="Search for products, categories..."
-                  className="w-full border text-white border-gray-300 rounded-full px-5 py-3 pr-12 shadow-md focus:ring-2 focus:ring-blue-400 outline-none"
+                  className="w-full border text-white border-gray-300 rounded-full px-5 py-3 pr-12 shadow-md bg-black/40 placeholder:text-gray-300 focus:bg-black/50 focus:ring-2 focus:ring-blue-400 outline-none"
                 />
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  strokeWidth={2}
-                  stroke="currentColor"
-                  className="absolute right-4 top-3.5 h-5 w-5 text-gray-500"
+                <button
+                  type="submit"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-2 text-gray-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
+                  aria-label="Submit search"
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 1010.5 18a7.5 7.5 0 006.15-3.35z"
-                  />
-                </svg>
-              </div>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth={2}
+                    stroke="currentColor"
+                    className="h-5 w-5"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 1010.5 18a7.5 7.5 0 006.15-3.35z"
+                    />
+                  </svg>
+                </button>
+              </form>
             </div>
 
             {/* Categories */}
@@ -278,18 +341,20 @@ const HomePage = () => {
                 (item) => (
                   <button
                     key={item}
-                    className="px-4 py-2 text-sm font-medium bg-white border border-gray-200 rounded-full shadow hover:border-blue-300 transition"
+                    type="button"
+                    onClick={() => handleSearch(item)}
+                    className="px-4 py-2 text-sm font-medium bg-white/90 border border-gray-200 rounded-full shadow transition"
                   >
                     {item}
                   </button>
-                )
+                ),
               )}
             </div>
           </div>
         </div>
 
         {/* Banner Section */}
-        <section className="min-h-screen w-full flex flex-col gap-3">
+        <section className="min-h-screen w-full flex flex-col gap-3 bg-white">
           {/* Top Row (2 banners) */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {/* Banner 1 */}
@@ -297,7 +362,7 @@ const HomePage = () => {
               <img
                 src={banner1}
                 alt="Banner 1"
-                className="w-full h-full object-cover group-hover:scale-110 transition duration-500"
+                className="w-full h-full object-cover transition duration-500"
               />
               <div className="absolute top-3 inset-x-0 flex flex-col items-center text-center p-6">
                 <h3 className="text-white text-3xl font-bold">
@@ -322,7 +387,7 @@ const HomePage = () => {
               <img
                 src={banner2}
                 alt="Banner 2"
-                className="w-full h-full object-cover group-hover:scale-110 transition duration-500"
+                className="w-full h-full object-cover transition duration-500"
               />
               <div className="absolute top-3 inset-x-0 flex flex-col items-center text-center p-6">
                 <h3 className="text-white text-3xl font-bold">Sky High</h3>
@@ -348,7 +413,7 @@ const HomePage = () => {
               <img
                 src={banner3}
                 alt="Banner 3"
-                className="w-full h-full object-cover group-hover:scale-110 transition duration-500"
+                className="w-full h-full object-cover transition duration-500"
               />
               <div className="absolute top-3 inset-x-0 flex flex-col items-center text-center p-6">
                 <h4 className="text-white text-lg font-bold underline">
@@ -374,7 +439,7 @@ const HomePage = () => {
               <img
                 src={banner4}
                 alt="Banner 4"
-                className="w-full h-full object-cover group-hover:scale-110 transition duration-500"
+                className="w-full h-full object-cover transition duration-500"
               />
               <div className="absolute top-3 inset-x-0 flex flex-col items-center text-center p-6">
                 <h4 className="text-white text-lg font-bold underline">
@@ -397,8 +462,10 @@ const HomePage = () => {
           </div>
         </section>
 
+        <div className="border-t-8 border-white"></div>
+
         {/* Circular Categories */}
-        <section className="py-10">
+        <section className="py-10 bg-black text-white">
           <motion.div
             className="max-w-7xl mx-auto px-4 grid grid-cols-2 sm:grid-cols-4 md:grid-cols-8 gap-6 text-center"
             initial="hidden"
@@ -430,3 +497,20 @@ const HomePage = () => {
 };
 
 export default HomePage;
+
+
+const CircleItem = ({ item }) => {
+  const { name, images } = item;
+  const image = images?.[0];
+
+  return (
+    <motion.div className="flex flex-col items-center text-center gap-3">
+      <div className="w-20 h-20 rounded-full overflow-hidden shadow-md mb-2 bg-white flex items-center justify-center">
+        {image ? (
+          <img src={image} alt={name} className="h-full w-full object-cover" loading="lazy" />
+        ) : null}
+      </div>
+      <span className="text-sm font-medium text-white">{name}</span>
+    </motion.div>
+  );
+};
