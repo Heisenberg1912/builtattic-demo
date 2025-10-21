@@ -1,4 +1,5 @@
-ï»¿import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "react-hot-toast";
 import { Link } from "react-router-dom";
 import {
   HiOutlineFilter,
@@ -7,6 +8,8 @@ import {
   HiHeart,
 } from "react-icons/hi";
 import { motion, AnimatePresence } from "framer-motion";
+import { useCart } from "../context/CartContext";
+import { useWishlist } from "../context/WishlistContext";
 import { marketplaceFeatures } from "../data/marketplace.js";
 import { fetchMaterials } from "../services/marketplace.js";
 import { analyzeImage } from "../utils/imageSearch.js";
@@ -16,11 +19,26 @@ import {
   getMaterialImage,
 } from "../utils/imageFallbacks.js";
 
+const extractWishlistIds = (items) => {
+  const set = new Set();
+  (items || []).forEach((entry) => {
+    const key =
+      entry?.productId ??
+      entry?.id ??
+      entry?._id ??
+      entry?.slug;
+    if (key != null) set.add(String(key));
+  });
+  return set;
+};
+
 const Warehouse = () => {
+  const { addToCart } = useCart();
+  const { addToWishlist, removeFromWishlist, wishlistItems = [] } = useWishlist();
   const [query, setQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [showFilters, setShowFilters] = useState(false);
-  const [favourites, setFavourites] = useState(new Set());
+  const [favourites, setFavourites] = useState(() => extractWishlistIds(wishlistItems));
   const [materials, setMaterials] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -30,6 +48,10 @@ const Warehouse = () => {
   const [imageStatus, setImageStatus] = useState("");
   const [imageSearching, setImageSearching] = useState(false);
   const imageInputRef = useRef(null);
+
+  useEffect(() => {
+    setFavourites(extractWishlistIds(wishlistItems));
+  }, [wishlistItems]);
 
   useEffect(() => {
     let cancelled = false;
@@ -93,12 +115,62 @@ const Warehouse = () => {
     });
   }, [filteredItems, imageKeywords]);
 
-  const toggleFavourite = (id) => {
-    setFavourites((prev) => {
-      const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
-      return next;
-    });
+  const handleAddToCart = async (material) => {
+    const key = material?._id ?? material?.id ?? material?.slug;
+    if (!key) return;
+    const price = Number(material.priceSqft ?? material.pricing?.basePrice ?? material.price ?? 0);
+    const payload = {
+      productId: key,
+      title: material.title,
+      image: getMaterialImage(material),
+      price,
+      quantity: 1,
+      seller: material.metafields?.vendor || "Marketplace vendor",
+      source: "Material",
+      kind: "material",
+      metadata: {
+        category: material.category,
+        unit: material.pricing?.unit || material.pricing?.unitLabel || material.metafields?.unit,
+      },
+    };
+    try {
+      await addToCart(payload);
+      toast.success(`${material.title} added to cart`);
+    } catch (err) {
+      console.error(err);
+      toast.error("Could not add to cart");
+    }
+  };
+
+  const toggleFavourite = async (material) => {
+    const key = material?._id ?? material?.id ?? material?.slug;
+    if (!key) return;
+    const stringKey = String(key);
+    const isFav = favourites.has(stringKey);
+    const payload = {
+      productId: key,
+      title: material.title,
+      image: getMaterialImage(material),
+      price: Number(material.priceSqft ?? material.pricing?.basePrice ?? material.price ?? 0),
+      source: "Material",
+    };
+    try {
+      if (isFav) {
+        await removeFromWishlist(payload);
+        toast.success("Removed from wishlist");
+      } else {
+        await addToWishlist(payload);
+        toast.success("Added to wishlist");
+      }
+      setFavourites((prev) => {
+        const next = new Set(prev);
+        isFav ? next.delete(stringKey) : next.add(stringKey);
+        return next;
+      });
+    } catch (err) {
+      console.error(err);
+      toast.error("Could not update wishlist");
+    }
   };
 
   const handleReverseSearchClick = () => {
@@ -167,7 +239,7 @@ const Warehouse = () => {
               type="search"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Search materials, vendors, or specificationsâ€¦"
+              placeholder="Search materials, vendors, or specifications…"
               className="w-full bg-white border border-slate-200 rounded-lg pl-12 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-slate-200"
             />
           </div>
@@ -262,14 +334,15 @@ const Warehouse = () => {
 
         {loading && (
           <div className="bg-white border border-slate-200 rounded-xl p-8 text-center text-slate-500">
-            Loading warehouse inventoryâ€¦
+            Loading warehouse inventory…
           </div>
         )}
 
         <section className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {!loading &&
             displayItems.map((item) => {
-              const favourite = favourites.has(item._id);
+              const materialKey = item._id ?? item.id ?? item.slug;
+              const favourite = materialKey ? favourites.has(String(materialKey)) : false;
               const pricing = item.pricing || {};
               const vendor = item.metafields?.vendor || "Builtattic partner";
               const location = item.metafields?.location || "Global";
@@ -310,7 +383,7 @@ const Warehouse = () => {
                         onClick={(event) => {
                           event.preventDefault();
                           event.stopPropagation();
-                          toggleFavourite(item._id);
+                          toggleFavourite(item);
                         }}
                         className="absolute top-3 right-3 bg-white/85 rounded-full p-2 shadow-sm"
                         aria-label="Toggle favourite"
@@ -331,7 +404,7 @@ const Warehouse = () => {
                           {item.title}
                         </h2>
                         <p className="text-sm text-slate-500">
-                          {vendor} â€¢ {location}
+                          {vendor} • {location}
                         </p>
                       </div>
 
@@ -369,7 +442,7 @@ const Warehouse = () => {
                       {item.highlights?.length ? (
                         <ul className="text-xs text-slate-500 space-y-1">
                           {item.highlights.slice(0, 3).map((highlight) => (
-                            <li key={highlight}>â€¢ {highlight}</li>
+                            <li key={highlight}>• {highlight}</li>
                           ))}
                         </ul>
                       ) : null}
@@ -381,15 +454,32 @@ const Warehouse = () => {
                           </p>
                           <ul className="space-y-1">
                             {item.delivery.items.slice(0, 3).map((deliverable) => (
-                              <li key={deliverable}>â€¢ {deliverable}</li>
+                              <li key={deliverable}>• {deliverable}</li>
                             ))}
                           </ul>
                         </div>
                       ) : null}
 
-                      <div className="flex gap-3">
-                        <button className="bg-slate-900 text-white px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-slate-800 transition">
+                      <div className="flex flex-wrap gap-3">
+                        <button
+                          onClick={(event) => {
+                            event.preventDefault();
+                            event.stopPropagation();
+                            handleAddToCart(item);
+                          }}
+                          className="bg-slate-900 text-white px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-slate-800 transition"
+                        >
                           Add to cart
+                        </button>
+                        <button
+                          onClick={(event) => {
+                            event.preventDefault();
+                            event.stopPropagation();
+                            toggleFavourite(item);
+                          }}
+                          className="px-4 py-2.5 rounded-lg border border-slate-200 text-sm font-medium text-slate-700 hover:border-slate-300 transition"
+                        >
+                          {favourite ? "Remove from wishlist" : "Add to wishlist"}
                         </button>
                         <button className="px-4 py-2.5 rounded-lg border border-slate-200 text-sm font-medium text-slate-700 hover:border-slate-300 transition">
                           Enquire
@@ -429,3 +519,4 @@ const Warehouse = () => {
 };
 
 export default Warehouse;
+

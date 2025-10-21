@@ -7,7 +7,7 @@ router.get("/", (_req, res) => {
   res.json({ ok: true, service: "vitruvi-ai" });
 });
 
-router.post("/api/analyze", async (req, res) => {
+router.post("/analyze", async (req, res) => {
   const { prompt = "", options = {} } = req.body || {};
   if (!prompt.trim()) {
     return res.status(400).json({ error: "prompt_required" });
@@ -23,7 +23,7 @@ router.post("/api/analyze", async (req, res) => {
   }
 });
 
-router.post("/api/analyze-and-generate", async (req, res) => {
+router.post("/analyze-and-generate", async (req, res) => {
   const { prompt = "", options = {} } = req.body || {};
   if (!prompt.trim()) {
     return res.status(400).json({ error: "prompt_required" });
@@ -39,7 +39,7 @@ router.post("/api/analyze-and-generate", async (req, res) => {
   }
 });
 
-router.post("/api/generate", async (req, res) => {
+router.post("/generate", async (req, res) => {
   const { prompt = "", options = {} } = req.body || {};
   if (!prompt.trim()) {
     return res.status(400).json({ error: "prompt_required" });

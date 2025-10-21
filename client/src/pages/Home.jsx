@@ -1,9 +1,10 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useMemo, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import Footer from "../components/Footer";
 import hero_img from "/src/assets/home/hero_img.jpg";
+import searchBackground from "/src/assets/home/Search Background.png";
 import banner1 from "/src/assets/home/banner1.jpg";
 import banner2 from "/src/assets/home/banner2.jpg";
 import banner3 from "/src/assets/home/banner3.png";
@@ -20,6 +21,11 @@ import timber_plank from "/src/assets/home/timber_plank.jpeg";
 import tempered_glass from "/src/assets/home/tempered_glass.jpeg";
 
 const SEARCH_MAPPINGS = [
+  {
+    keywords: ["design", "designs", "architect", "studio"],
+    to: "/studio",
+    state: { view: "designs" },
+  },
   {
     keywords: ["house", "home", "residential", "villa", "bungalow"],
     to: "/studio",
@@ -69,8 +75,9 @@ const SEARCH_MAPPINGS = [
     to: "/associates",
   },
   {
-    keywords: ["firm", "vendor", "partner"],
-    to: "/firms",
+    keywords: ["firm", "firms", "vendor", "partner"],
+    to: "/studio",
+    state: { view: "firms" },
   },
   {
     keywords: ["order", "history", "ops"],
@@ -230,7 +237,7 @@ const circleMaterials = useMemo(
           style={{
             position: "relative",
             width: "100%",
-            paddingTop: "56.25%", // keeps aspect ratio like 16:9
+            paddingTop: "42.01%", // aligns with hero image aspect ratio (523 / 1245)
           }}
         >
           {/* Image */}
@@ -245,6 +252,7 @@ const circleMaterials = useMemo(
               width: "100%",
               height: "100%",
               objectFit: "cover",
+              objectPosition: "center",
               border: "none",
             }}
           />
@@ -254,7 +262,7 @@ const circleMaterials = useMemo(
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
-            className="absolute inset-0 z-10 flex flex-col items-center justify-start text-center text-white pt-20 sm:pt-24 md:pt-28 lg:pt-32 gap-6"
+            className="absolute inset-0 z-10 flex flex-col items-center justify-start text-center text-white pt-10 sm:pt-12 md:pt-14 lg:pt-16 xl:pt-20 gap-6"
           >
             <div className="px-4">
               <h1 className="text-3xl sm:text-4xl md:text-4xl font-extrabold tracking-tight">
@@ -264,21 +272,22 @@ const circleMaterials = useMemo(
                 The journey starts this very minute.<br></br>Know what it is about.
               </p>
             </div>
-            <button className="bg-white text-gray-800 px-6 sm:px-8 py-2 sm:py-3 rounded-full shadow-md font-bold transition-all duration-300">
+            {/* <button className="bg-white text-gray-800 px-6 sm:px-8 py-2 sm:py-3 rounded-full shadow-md font-bold transition-all duration-300">
               Watch the film
-            </button>
+            </button> */}
           </motion.div>
         </motion.section>
 
         <div className="border-t-8 border-white"></div>
 
-        {/* GIF + Search Section */}
-        <div className="relative w-full h-screen flex items-center justify-center px-4 text-center">
-          {/* GIF Background with reduced opacity */}
+        <div className="border-x-8 border-white">
+          {/* Search Section */}
+          <div className="relative w-full min-h-[88.5vh] flex items-center justify-center px-4 text-center">
+          {/* Search Background with reduced opacity */}
           <div
-            className="absolute inset-0 bg-center bg-cover"
+            className="absolute inset-0 bg-center bg-contain bg-no-repeat"
             style={{
-              backgroundImage: `url('https://media.giphy.com/media/UzVAgtxx7DBra/giphy.gif')`,
+              backgroundImage: `url(${searchBackground})`,
             }}
           >
             {/* Dark overlay */}
@@ -337,24 +346,31 @@ const circleMaterials = useMemo(
 
             {/* Categories */}
             <div className="flex flex-wrap gap-3 justify-center">
-              {["House", "Mall", "Shop", "Office", "Park", "Institution"].map(
-                (item) => (
-                  <button
-                    key={item}
-                    type="button"
-                    onClick={() => handleSearch(item)}
-                    className="px-4 py-2 text-sm font-medium bg-white/90 border border-gray-200 rounded-full shadow transition"
-                  >
-                    {item}
-                  </button>
-                ),
-              )}
+              {[
+                { label: "Designs", to: "/studio", state: { view: "designs" } },
+                { label: "Firms", to: "/studio", state: { view: "firms" } },
+                { label: "Associates", to: "/associates", state: { view: "talent" } },
+                { label: "Materials", to: "/warehouse", state: { view: "materials" } },
+              ].map(({ label, to, state }) => (
+                <button
+                  key={label}
+                  type="button"
+                  onClick={() => {
+                    navigate(to, { state });
+                  }}
+                  className="px-4 py-2 text-sm font-medium bg-white/90 border border-gray-200 rounded-full shadow transition"
+                >
+                  {label}
+                </button>
+              ))}
             </div>
           </div>
         </div>
 
-        {/* Banner Section */}
-        <section className="min-h-screen w-full flex flex-col gap-3 bg-white">
+          <div className="border-t-8 border-white"></div>
+
+          {/* Banner Section */}
+          <section className="min-h-screen w-full flex flex-col gap-3 bg-white">
           {/* Top Row (2 banners) */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {/* Banner 1 */}
@@ -375,7 +391,7 @@ const circleMaterials = useMemo(
                   <button className="px-5 py-2 text-sm bg-white text-gray-900 rounded-full font-semibold">
                     Read more
                   </button>
-                  <button className="px-5 py-2 text-sm border border-white text-white rounded-full font-semibold">
+                  <button className="px-5 py-2 text-sm border border-white text-white rounded-full font-semibold transition hover:bg-white hover:text-gray-900">
                     Buy
                   </button>
                 </div>
@@ -398,7 +414,7 @@ const circleMaterials = useMemo(
                   <button className="px-5 py-2 text-sm bg-white text-gray-900 rounded-full font-semibold">
                     Read more
                   </button>
-                  <button className="px-5 py-2 text-sm border border-white text-white rounded-full font-semibold">
+                  <button className="px-5 py-2 text-sm border border-white text-white rounded-full font-semibold transition hover:bg-white hover:text-gray-900">
                     Buy
                   </button>
                 </div>
@@ -427,7 +443,7 @@ const circleMaterials = useMemo(
                   <button className="px-5 py-2 text-sm bg-white text-gray-900 rounded-full font-semibold">
                     Read more
                   </button>
-                  <button className="px-5 py-2 text-sm border border-white text-white rounded-full font-semibold">
+                  <button className="px-5 py-2 text-sm border border-white text-white rounded-full font-semibold transition hover:bg-white hover:text-gray-900">
                     Buy
                   </button>
                 </div>
@@ -453,34 +469,48 @@ const circleMaterials = useMemo(
                   <button className="px-5 py-2 text-sm bg-white text-gray-900 rounded-full font-semibold">
                     Read more
                   </button>
-                  <button className="px-5 py-2 text-sm border border-white text-white rounded-full font-semibold">
+                  <button className="px-5 py-2 text-sm border border-white text-white rounded-full font-semibold transition hover:bg-white hover:text-gray-900">
                     Buy
                   </button>
                 </div>
               </div>
             </div>
           </div>
-        </section>
+          </section>
 
-        <div className="border-t-8 border-white"></div>
+          <div className="border-t-8 border-white"></div>
 
-        {/* Circular Categories */}
-        <section className="py-10 bg-black text-white">
+          {/* Browse Materials */}
+          <section className="py-14 bg-black text-white">
+          {/* Heading */}
+          <div className="max-w-7xl mx-auto px-4 mb-8 text-center">
+            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">
+              Browse Materials
+            </h2>
+            <p className="mt-2 text-white/70 text-sm">
+              Popular categories to get you started
+            </p>
+          </div>
+
+          {/* Grid */}
           <motion.div
-            className="max-w-7xl mx-auto px-4 grid grid-cols-2 sm:grid-cols-4 md:grid-cols-8 gap-6 text-center"
+            className="max-w-7xl mx-auto px-4"
             initial="hidden"
             whileInView="show"
             viewport={{ once: true }}
-            variants={{
-              hidden: {},
-              show: { transition: { staggerChildren: 0.15 } },
-            }}
+            variants={{ hidden: {}, show: { transition: { staggerChildren: 0.15 } } }}
           >
-            {circleMaterials.map((item) => (
-              <CircleItem key={item.name} item={item} />
-            ))}
+            <div className="flex flex-nowrap items-start justify-center gap-3 sm:gap-5 overflow-x-auto pb-2">
+              {circleMaterials.slice(0, 6).map((item) => (
+                <CircleItem key={item.name} item={item} />
+              ))}
+            </div>
           </motion.div>
-        </section>
+
+          </section>
+        </div>
+
+        <div className="border-t-8 border-white"></div>
 
         {/* Footer with fade in */}
         <motion.div
@@ -504,10 +534,18 @@ const CircleItem = ({ item }) => {
   const image = images?.[0];
 
   return (
-    <motion.div className="flex flex-col items-center text-center gap-3">
-      <div className="w-20 h-20 rounded-full overflow-hidden shadow-md mb-2 bg-white flex items-center justify-center">
+    <motion.div className="flex flex-col items-center text-center gap-1">
+      {/* Portrait rounded-rectangle instead of circle */}
+      <div
+        className="w-45 aspect-[3/4] rounded-2xl overflow-hidden shadow-md mb-2 bg-white flex items-center justify-center"
+      >
         {image ? (
-          <img src={image} alt={name} className="h-full w-full object-cover" loading="lazy" />
+          <img
+            src={image}
+            alt={name}
+            className="h-full w-full object-cover"
+            loading="lazy"
+          />
         ) : null}
       </div>
       <span className="text-sm font-medium text-white">{name}</span>

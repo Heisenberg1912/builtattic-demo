@@ -72,13 +72,13 @@ const associateEnhancements = {
         "id": "addon-extra-hours",
         "name": "Additional 2 hours",
         "price": 90,
-        "currency": "USD"
+        "currency": "INR"
       },
       {
         "id": "addon-night",
         "name": "Night shift coverage",
         "price": 140,
-        "currency": "USD"
+        "currency": "INR"
       }
     ],
     "prepChecklist": [
@@ -157,13 +157,13 @@ const associateEnhancements = {
         "id": "addon-vr",
         "name": "VR walkthrough",
         "price": 320,
-        "currency": "EUR"
+        "currency": "INR"
       },
       {
         "id": "addon-branding",
         "name": "Brand guidelines sync",
         "price": 180,
-        "currency": "EUR"
+        "currency": "INR"
       }
     ],
     "prepChecklist": [

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { NavLink } from "react-router-dom";
 import main_logo from "/src/assets/main_logo/main_logo.png";
 import accountLogo from "/src/assets/icons/account-logo.png";
@@ -69,6 +69,12 @@ const Navbar = () => {
   }, [selectedCurrency]);
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const triggerRef = useRef(null);
+  const dropdownRef = useRef(null);
+  const [isDesktop, setIsDesktop] = useState(() => {
+    if (typeof window === "undefined") return true;
+    return window.matchMedia("(min-width: 768px)").matches;
+  });
 
   const [authState, setAuthState] = useState(() => readAuthSnapshot());
   const [user, setUser] = useState(() => getCurrentUser());
@@ -88,6 +94,25 @@ const Navbar = () => {
       window.removeEventListener("storage", refresh);
       window.removeEventListener("auth:login", refresh);
       window.removeEventListener("auth:logout", refresh);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+    const media = window.matchMedia("(min-width: 768px)");
+    const handleMediaChange = (event) => setIsDesktop(event.matches);
+    handleMediaChange(media);
+    if (media.addEventListener) {
+      media.addEventListener("change", handleMediaChange);
+    } else if (media.addListener) {
+      media.addListener(handleMediaChange);
+    }
+    return () => {
+      if (media.removeEventListener) {
+        media.removeEventListener("change", handleMediaChange);
+      } else if (media.removeListener) {
+        media.removeListener(handleMediaChange);
+      }
     };
   }, []);
 
@@ -115,6 +140,21 @@ const Navbar = () => {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isDropdownOpen]);
 
+  useEffect(() => {
+    if (!isDropdownOpen) return undefined;
+    const handleClick = (event) => {
+      if (
+        triggerRef.current?.contains(event.target) ||
+        dropdownRef.current?.contains(event.target)
+      ) {
+        return;
+      }
+      setIsDropdownOpen(false);
+    };
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [isDropdownOpen]);
+
   const closeDropdown = (shouldCloseMenu = false) => {
     setIsDropdownOpen(false);
     if (shouldCloseMenu) {
@@ -135,26 +175,53 @@ const Navbar = () => {
           </NavLink>
 
           {/* Desktop Menu */}
-          <div className="hidden md:flex space-x-8 items-center">
+          <div className="hidden md:flex space-x-8 items-center relative">
             <NavLink to="/ai" className="text-gray-100 hover:text-gray-100 text-xs">VitruviAI</NavLink>
             <NavLink to="/studio" className="text-gray-100 hover:text-gray-100 text-xs">Design Studio</NavLink>
             <NavLink to="/associates" className="text-gray-100 hover:text-gray-100 text-xs">Skill Studio</NavLink>
             <NavLink to="/warehouse" className="text-gray-100 hover:text-gray-100 text-xs">Material Studio</NavLink>
             <NavLink to="/matters" className="text-gray-100 hover:text-gray-100 text-xs">Matters</NavLink>
 
-            <button
-              className="group inline-flex items-center justify-center text-gray-100 transition hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
-              onClick={() => setIsDropdownOpen((v) => !v)}
-              aria-haspopup="true"
-              aria-expanded={isDropdownOpen}
-              title="Open user menu"
-            >
-              <img
-                src={accountLogo}
-                alt="Account menu"
-                className="h-6 w-6 object-contain transition group-hover:brightness-110"
-              />
-            </button>
+            <div className="relative" ref={triggerRef}>
+              <button
+                className="group inline-flex items-center justify-center text-gray-100 transition hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
+                onClick={() => setIsDropdownOpen((v) => !v)}
+                aria-haspopup="true"
+                aria-expanded={isDropdownOpen}
+                title="Open user menu"
+              >
+                <img
+                  src={accountLogo}
+                  alt="Account menu"
+                  className="h-6 w-6 object-contain transition group-hover:brightness-110"
+                />
+              </button>
+              <AnimatePresence>
+                {isDropdownOpen && isDesktop && (
+                  <motion.div
+                    ref={dropdownRef}
+                    initial={{ opacity: 0, y: -8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -8 }}
+                    transition={{ duration: 0.18 }}
+                    className="absolute right-0 mt-3 w-56 rounded-[28px] bg-black/92 text-white shadow-[0_24px_60px_rgba(0,0,0,0.55)] ring-1 ring-white/15"
+                  >
+                    <nav className="flex flex-col overflow-hidden text-center text-sm font-semibold tracking-wide">
+                      {dropdownItems.map((item) => (
+                        <NavLink
+                          key={item.label}
+                          to={item.to}
+                          className="px-6 py-3 hover:bg-white/10 transition first:rounded-t-[28px] last:rounded-b-[28px]"
+                          onClick={() => closeDropdown(true)}
+                        >
+                          {item.label}
+                        </NavLink>
+                      ))}
+                    </nav>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
 
             {isAuthed ? null : (
               <NavLink to="/login" className="text-gray-100 hover:text-gray-300 text-xs">
@@ -219,7 +286,7 @@ const Navbar = () => {
       </nav>
 
       <AnimatePresence>
-        {isDropdownOpen && (
+        {isDropdownOpen && !isDesktop && (
           <motion.div
             className="fixed inset-0 z-[70] flex items-start justify-center bg-black/55 backdrop-blur-sm pt-24 md:pt-28"
             initial={{ opacity: 0 }}
@@ -228,6 +295,7 @@ const Navbar = () => {
             onClick={() => closeDropdown(true)}
           >
             <motion.div
+              ref={dropdownRef}
               initial={{ opacity: 0, y: -16 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -16 }}
@@ -235,12 +303,12 @@ const Navbar = () => {
               className="w-56 rounded-[28px] bg-black/92 text-white shadow-[0_24px_60px_rgba(0,0,0,0.55)] ring-1 ring-white/15"
               onClick={(event) => event.stopPropagation()}
             >
-              <nav className="flex flex-col divide-y divide-white/10 text-center text-sm font-semibold tracking-wide">
+              <nav className="flex flex-col overflow-hidden text-center text-sm font-semibold tracking-wide">
                 {dropdownItems.map((item) => (
                   <NavLink
                     key={item.label}
                     to={item.to}
-                    className="px-6 py-3 hover:bg-white/10 transition"
+                    className="px-6 py-3 hover:bg-white/10 transition first:rounded-t-[28px] last:rounded-b-[28px]"
                     onClick={() => closeDropdown(true)}
                   >
                     {item.label}

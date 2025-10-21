@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { API_BASE } from "./config";
+import { FILTER_ORDER, FILTER_SETS } from "../constants/designFilters.js";
 
 /**
  * VitruviAI — Builtattic
@@ -28,7 +29,7 @@ import { API_BASE } from "./config";
 // ------------------------------ API HELPERS ---------------------------------
 async function callAnalyze(prompt, selected) {
   const body = { prompt, options: selectedToOptions(selected) };
-  const r = await fetch(`${API_BASE}/api/analyze`, {
+  const r = await fetch(`${API_BASE}/analyze`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body)
@@ -39,7 +40,7 @@ async function callAnalyze(prompt, selected) {
 
 async function callAnalyzeAndGenerate(prompt, selected) {
   const body = { prompt, options: selectedToOptions(selected) };
-  const r = await fetch(`${API_BASE}/api/analyze-and-generate`, {
+  const r = await fetch(`${API_BASE}/analyze-and-generate`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body)
@@ -218,36 +219,6 @@ const PinterestLoader = () => (
 );
 
 // --------------------------------- DATA ------------------------------------
-const FILTER_SETS = {
-  Category: [
-    "Residential","Commercial","Industrial","Recreational","Institutional","Agricultural","Mixed-Use","Infrastructural",
-  ],
-  Typology: [
-    "Residential – Apartment","Residential – Condominium","Residential – Single-Family House","Residential – Duplex","Residential – Triplex","Residential – Row House","Residential – Bungalow","Residential – Cottage","Residential – Villa","Residential – Mansion","Residential – Studio Apartment","Residential – Loft","Residential – Penthouse","Residential – Farmhouse","Residential – Earth Shelter",
-    "Commercial – Office Buildings","Commercial – Retail Stores","Commercial – Shopping Malls","Commercial – Restaurants","Commercial – Cafés","Commercial – Hotels","Commercial – Hostels","Commercial – Resorts","Commercial – Motels","Commercial – Theaters","Commercial – Convention Centers","Commercial – Exhibition Halls","Commercial – Clinics","Commercial – Banks","Commercial – Warehouses","Commercial – Showrooms","Commercial – Supermarkets","Commercial – Mixed-Use Buildings",
-    "Industrial – Factories","Industrial – Manufacturing Plants","Industrial – Warehouses","Industrial – Distribution Centers","Industrial – Power Plants","Industrial – Refineries","Industrial – Steel Mills","Industrial – Chemical Plants","Industrial – Food Processing Plants","Industrial – Textile Mills","Industrial – Breweries","Industrial – Shipyards","Industrial – Mining Facilities","Industrial – Industrial Parks",
-    "Agricultural – Barns","Agricultural – Silos","Agricultural – Greenhouses","Agricultural – Farmhouses","Agricultural – Storage Sheds","Agricultural – Poultry Houses","Agricultural – Cattle Sheds","Agricultural – Piggeries","Agricultural – Sheep Pens","Agricultural – Stables","Agricultural – Irrigation Structures","Agricultural – Fencing","Agricultural – Fish Farms","Agricultural – Crop Processing Units","Agricultural – Dairy Farms",
-    "Recreational – Parks","Recreational – Playgrounds","Recreational – Stadiums","Recreational – Sports Complexes","Recreational – Gyms","Recreational – Swimming Pools","Recreational – Golf Courses","Recreational – Resorts","Recreational – Amusement Parks","Recreational – Zoos","Recreational – Aquariums","Recreational – Museums","Recreational – Art Galleries","Recreational – Theaters","Recreational – Cinemas","Recreational – Community Centers","Recreational – Clubs","Recreational – Spas","Recreational – Gaming Arcades",
-    "Institutional – Schools","Institutional – Colleges","Institutional – Universities","Institutional – Libraries","Institutional – Research Institutes","Institutional – Museums","Institutional – Courthouses","Institutional – Police Stations","Institutional – Fire Stations","Institutional – Post Offices","Institutional – City Halls","Institutional – Government Offices","Institutional – Parliament","Institutional – Embassies","Institutional – Military Bases","Institutional – Cultural Centers","Institutional – Hospitals","Institutional – Community Centers",
-    "Mixed Use – Residential + Commercial","Mixed Use – Residential + Office","Mixed Use – Residential + Retail","Mixed Use – Office + Retail","Mixed Use – Hotel + Residential","Mixed Use – Hotel + Retail","Mixed Use – Transit-Oriented Developments","Mixed Use – Live-Work Units","Mixed Use – Mall + Office + Residential","Mixed Use – Smart Cities",
-    "Infrastructural – Highways","Infrastructural – Airports","Infrastructural – Seaports","Infrastructural – Bus Terminals","Infrastructural – Metro","Infrastructural – Dams","Infrastructural – Canals","Infrastructural – Irrigation Systems","Infrastructural – Water Supply Systems","Infrastructural – Sewage Systems","Infrastructural – Power Plants","Infrastructural – Transmission Lines","Infrastructural – Telecommunication Towers","Infrastructural – Pipelines","Infrastructural – Parking Structures",
-  ],
-  Style: ["Classical","Gothic","Renaissance","Baroque","Neoclassical","Victorian","Beaux-Arts","Art Nouveau","Art Deco","Modernism","Bauhaus","International Style","Mid-Century Modern","Brutalism","Postmodernism","Deconstructivism","Minimalism","Neo-Futurism","Bohemian","Industrial","Eco-architecture","Japanese","Parametric","Scandinavian","Fachwerk / Half-Timbered","Greek Revival","Contemporary","Chinese","Romanesque","Queenslander","Federation"],
-  "Climate Adaptability": ["Hot & Dry","Hot & Humid","Cold & Dry","Cold","Temperate","Composite","Tropical","Tundra","Tropical Rainforest","Tropical Monsoon","Tropical Savanna","Hot Desert","Cold Desert","Hot Semi-Arid","Cold Semi-Arid","Mediterranean","Marine","Continental"],
-  Terrain: ["Flat","Sloping","Hilly","Mountainous","Coastal","Waterfront","Riverfront","Lakefront","Tropical","Plateau","Valley","Cliff","Floodplains"],
-  "Soil Type": ["Loose","Soft","Firm","Stiff","Dense","Hard","Rocky","Sandy","Tropical","Clayey","Sandy Clay","Loamy","Silty","Silty Clay","Silty Loam","Sandy Loam","Loamy Sand","Black Soil","Red Soil","Alluvial Soil","Yellow Soil","Light Grey Soil"],
-  "Material Used": ["Stone","Brick","Concrete","Steel","Glass","Wood","Bamboo","Aluminum","Copper","Clay","Plaster & Stucco","Adobe","Rammed Earth","CSEB (Compressed Stabilized Earth Blocks)","PVC","Translucent Concrete","Acrylic","Fiber-reinforced"],
-  "Interior Layout": ["Open","Closed","Linear","Centralized","Radial","Grid","Cluster","Split-Level","Loft","Courtyard","Studio","Staggered"],
-  "Roof Type": ["Flat","Gable","Hip","Shed","Mansard","Gambrel","Butterfly","Dome","Pyramid","Green","Curved","Sawtooth","Thatch","Hip & Valley","Truss Roof","Barrel Vault"],
-  Exterior: ["Façade","Cladding","Siding","Stucco","Brickwork","Stone Veneer","Glass Curtain Wall","Timber Exterior","Metal Panels","Green Walls","Pergolas","Awnings","Canopies","Balconies","Verandas","Decks","Patios","Porches","Driveways","Fences","Eaves","Gates","Water Features (Pond)","Water Features (Fountain)","Bay Windows","Chimneys","Columns","Domes","Spires","Skylights","Staircases","Elevators","Ramps"],
-  "Additional Features": ["Balconies","Verandas","Terraces","Patios","Pergolas","Atriums","Bay Windows","Chimneys","Columns","Domes","Spires","Staircases","Elevators","Ramps","Fireplaces","Green Cover Preservation"],
-  Sustainability: ["Passive Solar Design","Green Roofs","Rainwater Harvesting","Greywater Recycling","Natural Ventilation","Thermal Mass","Daylighting","Net-Zero Energy Design","Recycled Materials","Modular Construction","Smart Glass","Solar Panels (Photovoltaics)","Wind Energy Integration","Geothermal Heating & Cooling","Biomimicry Design","BREEAM Standards","Circular Economy Design","Adaptive Reuse","Carbon-Neutral Construction"],
-};
-
-const FILTER_ORDER = [
-  "Category","Typology","Style","Climate Adaptability","Terrain","Soil Type","Material Used","Interior Layout","Roof Type","Exterior","Additional Features","Sustainability",
-];
-
 // ------------------------------ UTILITIES ----------------------------------
 function toggleSet(set, value) {
   const next = new Set(set);
@@ -278,12 +249,16 @@ function buildPromptWithFilters(promptText, selected) {
 function simulatePromptAnalysis(prompt, selected) {
   const lower = prompt.toLowerCase();
   const pick = (key, fallbacks = []) => {
-    const options = FILTER_SETS[key];
-    for (const opt of options) {
-      const needle = opt.split(" – ")[0].toLowerCase();
+    const options = Array.isArray(FILTER_SETS[key]) ? FILTER_SETS[key] : [];
+    const pool = options.length ? options : fallbacks;
+    for (const opt of pool) {
+      const needle = opt.split(" - ")[0].toLowerCase();
       if (lower.includes(needle)) return opt;
     }
-    return fallbacks[0] || options[0];
+    if (pool.length) return pool[0];
+    if (options.length) return options[0];
+    if (fallbacks.length) return fallbacks[0];
+    return key;
   };
   return {
     Category: pick("Category"),
@@ -319,7 +294,7 @@ function simulateDesignInsights(promptAnalysis) {
 
 function suggestProgramFromState(selected, analysis) {
   const cat = analysis?.Category || [...(selected["Category"] || [])][0] || "Residential";
-  const typo = analysis?.Typology || [...(selected["Typology"] || [])][0] || "Residential – Apartment";
+  const typo = analysis?.Typology || [...(selected["Typology"] || [])][0] || "Apartment";
 
   let programName = "Concept Program";
   if (/residential/i.test(cat)) {

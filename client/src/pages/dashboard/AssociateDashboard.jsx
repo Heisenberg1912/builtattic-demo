@@ -86,7 +86,7 @@ export default function AssociateDashboard() {
             <h2 className="text-lg font-semibold capitalize">{activeView}</h2>
           </div>
           <img
-            src="https://via.placeholder.com/40"
+            src="https://placehold.co/40x40"
             alt="Profile"
             className="w-10 h-10 rounded-full border border-gray-200"
           />

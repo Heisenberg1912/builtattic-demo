@@ -1,9 +1,9 @@
-﻿import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import Footer from "../components/Footer";
 import RegistrStrip from "../components/registrstrip";
-import { marketplaceFeatures } from "../data/marketplace.js";
+import { marketplaceFeatures, fallbackStudios } from "../data/marketplace.js";
 import { fetchMarketplaceFirms } from "../services/marketplace.js";
 import {
   applyFallback,
@@ -20,6 +20,89 @@ const Firms = () => {
   const [firms, setFirms] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const fallbackStudioInsights = useMemo(() => {
+    const map = new Map();
+    fallbackStudios.forEach((studio) => {
+      const keys = [
+        studio.firm?._id,
+        studio.firm?.slug,
+        studio.firmSlug,
+        studio.firm?.name,
+      ]
+        .filter(Boolean)
+        .map((key) => String(key).toLowerCase());
+      const price = studio.priceSqft ?? studio.pricing?.basePrice ?? null;
+      const currency = studio.currency || studio.pricing?.currency || null;
+      keys.forEach((key) => {
+        if (!map.has(key)) {
+          map.set(key, {
+            count: 0,
+            titles: new Map(),
+            prices: [],
+            currency: currency || null,
+          });
+        }
+        const bucket = map.get(key);
+        bucket.count += 1;
+        if (studio.title) bucket.titles.set(studio.title, true);
+        if (price != null && Number.isFinite(Number(price))) {
+          bucket.prices.push(Number(price));
+        }
+        if (currency && !bucket.currency) bucket.currency = currency;
+      });
+    });
+    map.forEach((bucket) => {
+      bucket.samples = Array.from(bucket.titles.keys()).slice(0, 3);
+      delete bucket.titles;
+    });
+    return map;
+  }, []);
+
+  const getFallbackInsight = useCallback(
+    (firm) => {
+      const candidates = [firm._id, firm.slug, firm.firmSlug, firm.name]
+        .filter(Boolean)
+        .map((key) => String(key).toLowerCase());
+      for (const key of candidates) {
+        if (fallbackStudioInsights.has(key)) {
+          return fallbackStudioInsights.get(key);
+        }
+      }
+      return null;
+    },
+    [fallbackStudioInsights]
+  );
+
+  const resolveFirmStudioCount = useCallback(
+    (firm) => {
+      if (Array.isArray(firm.featuredStudios)) return firm.featuredStudios.length;
+      const numericCatalogue = firm.cataloguesCount != null ? Number(firm.cataloguesCount) : null;
+      if (Number.isFinite(numericCatalogue)) return numericCatalogue;
+      const insight = getFallbackInsight(firm);
+      return insight?.count || 0;
+    },
+    [getFallbackInsight]
+  );
+
+  const resolveFirmSampleStudios = useCallback(
+    (firm) => getFallbackInsight(firm)?.samples || [],
+    [getFallbackInsight]
+  );
+
+  const resolveFirmStartingPrice = useCallback(
+    (firm) => {
+      if (firm.priceSqft != null && Number.isFinite(Number(firm.priceSqft))) {
+        const currency = firm.currency || firm.pricing?.currency || "USD";
+        return { price: Number(firm.priceSqft), currency };
+      }
+      const insight = getFallbackInsight(firm);
+      if (!insight || !insight.prices.length) return null;
+      const price = Math.min(...insight.prices);
+      const currency = insight.currency || firm.currency || firm.pricing?.currency || "USD";
+      return { price, currency };
+    },
+    [getFallbackInsight]
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -123,18 +206,38 @@ const Firms = () => {
 
         {loading && (
           <div className="bg-white border border-slate-200 rounded-xl p-8 text-center text-slate-500">
-            Loading firmsGÇª
+            Loading firms...
           </div>
         )}
 
         <section className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {!loading &&
             filteredFirms.map((firm) => {
-              const studioCount = firm.featuredStudios?.length ?? 0;
+              const studioCount = resolveFirmStudioCount(firm);
               const coverImage = getFirmCoverImage(firm);
               const coverFallback = getFirmCoverFallback(firm);
               const avatarImage = getFirmAvatarImage(firm);
               const avatarFallback = getFirmAvatarFallback(firm);
+              const leadTimes = (firm.services || [])
+                .map((service) => (service?.leadTimeWeeks != null ? Number(service.leadTimeWeeks) : null))
+                .filter((value) => Number.isFinite(value));
+              const avgLeadTimeWeeks = firm.avgLeadTimeWeeks != null
+                ? Number(firm.avgLeadTimeWeeks)
+                : (leadTimes.length ? Math.round(leadTimes.reduce((sum, value) => sum + value, 0) / leadTimes.length) : null);
+              const numericTeam = firm.team != null ? Number(firm.team) : null;
+              const numericProjects = firm.projectsDelivered != null ? Number(firm.projectsDelivered) : null;
+              const numericTeamSize = firm.teamSize != null ? Number(firm.teamSize) : null;
+              const derivedHeadcount = Number.isFinite(numericTeam)
+                ? numericTeam
+                : (Number.isFinite(numericTeamSize)
+                    ? numericTeamSize
+                    : (leadTimes.length ? Math.max(leadTimes.length * 6, 8) : (studioCount ? Math.max(studioCount * 4, 6) : null)));
+              const deliveredProjects = Number.isFinite(numericProjects)
+                ? numericProjects
+                : (firm.gallery?.length ? firm.gallery.length * 6 : null);
+              const ratingValue = typeof firm.rating === "number" ? firm.rating : null;
+              const sampleStudios = resolveFirmSampleStudios(firm);
+              const startingPrice = resolveFirmStartingPrice(firm);
 
               return (
                 <motion.article
@@ -175,20 +278,22 @@ const Firms = () => {
                         <p className="text-slate-400 text-xs uppercase tracking-widest mb-1">
                           Locations
                         </p>
-                        <p>{firm.locations?.join(" -+ ")}</p>
+                        <p>{firm.locations?.length ? firm.locations.join(" / ") : "-"}</p>
                       </div>
                       <div>
                         <p className="text-slate-400 text-xs uppercase tracking-widest mb-1">
                           Styles
                         </p>
-                        <p>{firm.styles?.join(", ")}</p>
+                        <p>{firm.styles?.length ? firm.styles.join(", ") : "-"}</p>
                       </div>
-                      {firm.priceSqft && (
+                      {startingPrice && (
                         <div>
                           <p className="text-slate-400 text-xs uppercase tracking-widest mb-1">
                             Starting fee
                           </p>
-                          <p>${firm.priceSqft.toFixed(2)} / sq.ft</p>
+                          <p>
+                            {startingPrice.currency} {startingPrice.price.toFixed(2)} / sq.ft
+                          </p>
                         </div>
                       )}
                       <div>
@@ -198,6 +303,16 @@ const Firms = () => {
                         <p>{studioCount} catalogues</p>
                       </div>
                     </div>
+
+                    {sampleStudios.length > 0 && (
+                      <div className="flex flex-wrap gap-2 text-xs text-slate-500">
+                        {sampleStudios.map((title) => (
+                          <span key={title} className="rounded-full border border-slate-200 bg-slate-100 px-3 py-1">
+                            {title}
+                          </span>
+                        ))}
+                      </div>
+                    )}
 
                     {firm.services?.length ? (
                       <div className="bg-slate-100 border border-slate-200 rounded-lg p-4 text-sm text-slate-600">
@@ -220,14 +335,17 @@ const Firms = () => {
                     ) : null}
 
                     <div className="flex flex-wrap gap-3 items-center text-sm text-slate-600">
-                      <span>
-                        Team {firm.team ?? "-"} | {firm.projectsDelivered ?? 0} projects
-                      </span>
-                      {firm.avgLeadTimeWeeks && (
-                        <span>Lead time {firm.avgLeadTimeWeeks} weeks</span>
+                      {derivedHeadcount != null && (
+                        <span>Team {Math.round(derivedHeadcount)}+</span>
                       )}
-                      {firm.rating && (
-                        <span>Rating {firm.rating.toFixed?.(1)}/5</span>
+                      {deliveredProjects != null && (
+                        <span>{Math.round(deliveredProjects)}+ projects</span>
+                      )}
+                      {Number.isFinite(avgLeadTimeWeeks) && (
+                        <span>Lead time ~{Math.round(avgLeadTimeWeeks)} weeks</span>
+                      )}
+                      {ratingValue != null && (
+                        <span>Rating {ratingValue.toFixed(1)}/5</span>
                       )}
                     </div>
 
@@ -290,6 +408,18 @@ const Firms = () => {
 };
 
 export default Firms;
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

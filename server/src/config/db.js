@@ -1,6 +1,4 @@
-import dotenv from "dotenv";
-
-dotenv.config();
+import "./hardcodedEnv.js";
 
 /**
  * Connect to MongoDB if MONGODB_URI is provided.

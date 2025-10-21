@@ -1,4 +1,4 @@
-import 'dotenv/config';
+import './config/hardcodedEnv.js';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -32,6 +32,8 @@ import assetsRouter from './routes/assets.js';
 import vitruviRouter from './routes/vitruvi.js';
 import mattersRouter from './routes/matters.js';
 import supportRouter from './routes/support.js';
+import documentsRouter from './routes/documents.js';
+import accessRequestsRouter from './routes/accessRequests.js';
 
 const app = express();
 const __filename = fileURLToPath(import.meta.url);
@@ -79,6 +81,8 @@ app.use(['/assets', '/api/assets'], assetsRouter);
 app.use(['/vitruvi', '/api/vitruvi'], vitruviRouter);
 app.use(['/matters', '/api/matters'], mattersRouter);
 app.use(['/support', '/api/support'], supportRouter);
+app.use(['/documents', '/api/documents'], documentsRouter);
+app.use(['/access-requests', '/api/access-requests'], accessRequestsRouter);
 
 /* ---------- Fallback health (works even if router changes) ---------- */
 app.get(['/health', '/api/health'], (_req, res) => {

@@ -26,22 +26,18 @@ const Footer = () => {
         <div>
           <h3 className="font-semibold text-white mb-4">About Us</h3>
           <ul className="space-y-2 text-sm">
-            <li><Link to="/story" className="hover:text-white">Our Story</Link></li>
-            <li><Link to="/careers" className="hover:text-white">Careers</Link></li>
-            <li><Link to="/faust" className="hover:text-white">Faust UD</Link></li>
-            <li><a href="https://builtattic.info/" className="hover:text-white">Builtattic</a></li>
+            <li><a href="https://builtattic.info/" className="hover:text-white">Information</a></li>
+            <li><a href="https://builtattic.info/" className="hover:text-white">Meet our Team</a></li>
+            <li><a href="https://builtattic.info/" className="hover:text-white">Contact Us</a></li>
           </ul>
         </div>
 
         <div>
           <h3 className="font-semibold text-white mb-4">Connect with Us</h3>
           <ul className="space-y-2 text-sm">
+            <li><a href="https://www.linkedin.com/company/builltattic" className="hover:text-white">LinkedIn</a></li>
             <li><Link to="/instagram" className="hover:text-white">Instagram</Link></li>
-            <li><Link to="/linkedin" className="hover:text-white">LinkedIn</Link></li>
-            <li><Link to="/twitter" className="hover:text-white">X / Twitter</Link></li>
-            <li><Link to="/facebook" className="hover:text-white">Facebook</Link></li>
-            <li><Link to="/email" className="hover:text-white">E-mail</Link></li>
-            <li><Link to="/contact" className="hover:text-white">Contact</Link></li>
+            <li><Link to="/youtube" className="hover:text-white">Youtube</Link></li>
           </ul>
         </div>
 
@@ -49,8 +45,8 @@ const Footer = () => {
           <h3 className="font-semibold text-white mb-4">Join the Platform</h3>
           <ul className="space-y-2 text-sm">
             <li><Link to="/register" className="hover:text-white">Register your Firm</Link></li>
-            <li><Link to="/design" className="hover:text-white">Become a Design Associate</Link></li>
-            <li><Link to="/advertise" className="hover:text-white">Advertise your Design</Link></li>
+            <li><Link to="/register" className="hover:text-white">Become a Design Associate</Link></li>
+            <li><Link to="/register" className="hover:text-white">Advertise your Design</Link></li>
           </ul>
         </div>
 
@@ -58,9 +54,15 @@ const Footer = () => {
           <h3 className="font-semibold text-white mb-4">Help Center</h3>
           <ul className="space-y-2 text-sm">
             <li><Link to="/account" className="hover:text-white">Account</Link></li>
-            <li><Link to="/return" className="hover:text-white">Return Policy</Link></li>
-            <li><Link to="/safety" className="hover:text-white">Design Recall & Safety Guidelines</Link></li>
-            <li><Link to="/delivery" className="hover:text-white">Delivery Associate Process</Link></li>
+            <li>
+              <button
+                type="button"
+                onClick={() => window.dispatchEvent(new CustomEvent("support-chat:open"))}
+                className="hover:text-white transition text-inherit bg-transparent border-0 outline-none cursor-pointer"
+              >
+                Chat with us
+              </button>
+            </li>
             <li><Link to="/faqs" className="hover:text-white">FAQs</Link></li>
           </ul>
         </div>
@@ -71,8 +73,8 @@ const Footer = () => {
 
       {/* Bottom Logo/Brand */}
       <div className="text-center py-6">
-        <p className="text-white text-lg font-bold tracking-widest">
-          AttIc <span className="font-light">AI</span>
+        <p className="text-white text-lg font-bold tracking-widest" style={{ fontFamily: "Montserrat, sans-serif" }}>
+          VitruviAI
         </p>
       </div>
     </footer>

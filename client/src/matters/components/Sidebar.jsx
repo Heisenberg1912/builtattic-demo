@@ -1,25 +1,27 @@
 import { useMemo } from "react";
 import {
-  Boxes,
-  ClipboardList,
-  DraftingCompass,
-  History as HistoryIcon,
   LayoutDashboard,
-  Moon,
-  Palette,
-  Sun,
-  Wallet,
+  Package,
+  ShoppingBag,
+  PenTool,
+  LineChart,
+  History,
+  Sparkles,
+  SunMedium,
+  MoonStar,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { useApi } from "../lib/ctx";
 
 const NAV_ITEMS = [
-  { key: "Dashboard", label: "Dashboard", Icon: LayoutDashboard },
-  { key: "Inventory", label: "Inventory", Icon: Boxes },
-  { key: "OrderMaterial", label: "Order Material", Icon: ClipboardList },
-  { key: "DesignDetails", label: "Design Details", Icon: DraftingCompass },
-  { key: "FinanceReport", label: "Finance Report", Icon: Wallet },
-  { key: "History", label: "History", Icon: HistoryIcon },
-  { key: "MyDesign", label: "My Design", Icon: Palette },
+  { key: "Dashboard", label: "Overview", Icon: LayoutDashboard },
+  { key: "Inventory", label: "Inventory", Icon: Package },
+  { key: "OrderMaterial", label: "Procurement", Icon: ShoppingBag },
+  { key: "DesignDetails", label: "Design Studio", Icon: PenTool },
+  { key: "FinanceReport", label: "Finance", Icon: LineChart },
+  { key: "History", label: "Timeline", Icon: History },
+  { key: "MyDesign", label: "Inspiration", Icon: Sparkles },
 ];
 
 export default function Sidebar({
@@ -27,6 +29,7 @@ export default function Sidebar({
   mobileOpen = false,
   isDesktop = false,
   onNavigate,
+  onToggleCollapse,
 }) {
   const {
     activeSidebar,
@@ -38,21 +41,23 @@ export default function Sidebar({
     setTheme,
   } = useApi() || {};
 
+  const effectiveCollapsed = isDesktop ? collapsed : false;
+
   const containerClasses = useMemo(() => {
     const classes = [
-      "z-40 flex flex-col gap-4 rounded-2xl border border-border bg-surface text-sm text-textPrimary shadow-card transition-all duration-300",
-      collapsed ? "lg:w-[96px] lg:items-center lg:p-3" : "lg:w-[240px] lg:p-4",
+      "z-40 flex flex-col gap-5 rounded-3xl border border-border/70 bg-surface text-sm text-textPrimary shadow-card transition-all duration-300",
+      effectiveCollapsed ? "lg:w-[86px] lg:items-center lg:p-4" : "lg:w-[248px] lg:p-5",
       "p-4",
     ];
     if (isDesktop) {
       classes.push("hidden lg:flex");
     } else if (mobileOpen) {
-      classes.push("fixed top-20 left-4 right-4 flex max-h-[calc(100vh-104px)] overflow-y-auto");
+      classes.push("fixed top-20 left-4 right-4 flex max-h-[calc(100vh-120px)] overflow-y-auto backdrop-blur");
     } else {
       classes.push("hidden");
     }
     return classes.join(" ");
-  }, [collapsed, isDesktop, mobileOpen]);
+  }, [effectiveCollapsed, isDesktop, mobileOpen]);
 
   const handleNav = (item) => {
     if (item?.action) {
@@ -69,7 +74,7 @@ export default function Sidebar({
     () => ({
       key: "DarkMode",
       label: "Dark Mode",
-      Icon: theme === "dark" ? Sun : Moon,
+      Icon: theme === "dark" ? SunMedium : MoonStar,
       action: () => {
         const next = theme === "dark" ? "light" : "dark";
         setTheme?.(next);
@@ -95,10 +100,10 @@ export default function Sidebar({
       <button
         key={mode.name}
         onClick={() => handleModeSelect(mode.name)}
-        className={`flex w-full flex-col items-start rounded-2xl border px-3 py-2 text-left transition ${
+        className={`flex w-full flex-col items-start rounded-2xl border px-3 py-2 text-left transition-all duration-200 ${
           isActive
-            ? "border-accent bg-accent/10 text-accent"
-            : "border-border bg-surfaceSoft text-textMuted hover:border-accent hover:text-textPrimary"
+            ? "border-textPrimary/40 bg-textPrimary/5 text-textPrimary shadow-sm"
+            : "border-border/70 bg-surface-soft text-textMuted hover:border-textPrimary/20 hover:text-textPrimary"
         }`}
       >
         <span className="text-sm font-semibold leading-tight">{mode.label}</span>
@@ -113,6 +118,21 @@ export default function Sidebar({
 
   return (
     <aside className={containerClasses}>
+      <header className={`flex w-full items-center ${effectiveCollapsed ? "justify-center" : "justify-between"}`}>
+        {!effectiveCollapsed && (
+          <span className="text-xs font-semibold uppercase tracking-[0.3em] text-textMuted">
+            Matters
+          </span>
+        )}
+        <button
+          type="button"
+          onClick={() => onToggleCollapse?.()}
+          className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-border/70 text-textMuted hover:text-textPrimary"
+        >
+          {effectiveCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+        </button>
+      </header>
+
       <nav className="flex flex-col gap-1">
         {itemsWithDarkMode.map((item) => {
           const isActive = item.key && item.key !== "DarkMode" && activeSidebar === item.key;
@@ -121,24 +141,25 @@ export default function Sidebar({
             <button
               key={item.key}
               onClick={() => handleNav(item)}
-              className={`flex h-10 w-full items-center gap-2 rounded-xl border border-transparent px-3 py-2 text-left transition-colors duration-200 ${
+              className={`group flex h-10 w-full items-center gap-2 rounded-xl px-3 py-2 text-left transition-all duration-200 ${
                 isActive
-                  ? "bg-accent/10 text-accent"
-                  : "text-textMuted hover:bg-surfaceSoft"
-              } ${collapsed ? "justify-center px-0" : ""}`}
+                  ? "bg-textPrimary/5 text-textPrimary shadow-sm"
+                  : "text-textMuted hover:bg-surface-soft hover:text-textPrimary"
+              } ${effectiveCollapsed ? "justify-center px-0" : ""}`}
             >
-              <Icon className="h-4 w-4" aria-hidden="true" />
-              {!collapsed && <span>{item.label}</span>}
+              <Icon className="h-4 w-4 transition-transform duration-200 group-hover:scale-110" aria-hidden="true" />
+              {!effectiveCollapsed && <span>{item.label}</span>}
             </button>
           );
         })}
       </nav>
+
       {modeButtons.length > 0 && (
-        <div className="space-y-3 rounded-2xl border border-border bg-surfaceSoft/60 p-3">
+        <div className={`space-y-3 rounded-2xl border border-border/70 bg-surface-soft p-3 ${effectiveCollapsed ? "hidden" : ""}`}>
           <div className="text-[11px] uppercase tracking-wide text-textMuted">
             Modes
           </div>
-          <div className="grid gap-2">
+          <div className="space-y-2">
             {modeButtons}
           </div>
         </div>

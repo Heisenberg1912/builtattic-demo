@@ -4,21 +4,35 @@ import { motion } from "framer-motion";
 import { toast } from "react-hot-toast";
 import Footer from "../components/Footer";
 import RegistrStrip from "../components/registrstrip";
+import FiltersPanel from "../components/FiltersPanel.jsx";
+import { createEmptyFilterState } from "../constants/designFilters.js";
 import { fetchMarketplaceAssociates } from "../services/marketplace.js";
 import { useCart } from "../context/CartContext";
+import { useWishlist } from "../context/WishlistContext";
 import {
   applyFallback,
   getAssociateAvatar,
   getAssociateFallback,
 } from "../utils/imageFallbacks.js";
 
+const ASSOCIATE_FILTER_SECTIONS = [
+  "Category",
+  "Typology",
+  "Style",
+  "Material Used",
+  "Additional Features",
+  "Sustainability",
+];
+
 const Associates = () => {
   const { addToCart } = useCart();
+  const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
   const [query, setQuery] = useState("");
   const [selectedSpecialisation, setSelectedSpecialisation] = useState("All");
   const [associates, setAssociates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [filters, setFilters] = useState(() => createEmptyFilterState());
 
   useEffect(() => {
     let cancelled = false;
@@ -51,6 +65,9 @@ const Associates = () => {
     return ["All", ...new Set(all)];
   }, [associates]);
 
+  const isAssociateWishlisted = (associate) =>
+    Boolean(isInWishlist(associate?._id ?? associate));
+
   const handleBookCall = (associate) => {
     const slot = associate.booking?.slots?.[0] || null;
     addToCart({
@@ -73,8 +90,51 @@ const Associates = () => {
     toast.success(`Discovery call with ${associate.user?.email || associate.title} added to cart`);
   };
 
+  const handleToggleWishlist = async (associate) => {
+    const payload = {
+      productId: associate._id,
+      title: associate.title,
+      image: associate.avatar || associate.photos?.[0] || "",
+      price: Number(associate.rates?.hourly || associate.rates?.daily || 0),
+      source: "Associate",
+    };
+    try {
+      if (isAssociateWishlisted(associate)) {
+        await removeFromWishlist(payload);
+        toast.success("Removed from wishlist");
+      } else {
+        await addToWishlist(payload);
+        toast.success("Saved to wishlist");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Could not update wishlist");
+    }
+  };
+
+  const handleFilterToggle = (section, option) => {
+    setFilters((prev) => {
+      const nextSet = new Set(prev[section] || []);
+      if (nextSet.has(option)) {
+        nextSet.delete(option);
+      } else {
+        nextSet.add(option);
+      }
+      return { ...prev, [section]: nextSet };
+    });
+  };
+
+  const handleClearFilters = () => {
+    setFilters(createEmptyFilterState());
+  };
+
+  const hasActiveFilters = useMemo(
+    () => ASSOCIATE_FILTER_SECTIONS.some((key) => filters[key]?.size),
+    [filters]
+  );
+
   const filteredAssociates = useMemo(() => {
-    return associates.filter((associate) => {
+    const base = associates.filter((associate) => {
       const matchesQuery =
         !query ||
         associate.title?.toLowerCase().includes(query.toLowerCase()) ||
@@ -86,12 +146,55 @@ const Associates = () => {
         (associate.specialisations || []).includes(selectedSpecialisation);
       return matchesQuery && matchesSpecialisation;
     });
-  }, [associates, query, selectedSpecialisation]);
+
+    if (!hasActiveFilters) return base;
+    const activeSections = ASSOCIATE_FILTER_SECTIONS.filter((key) => filters[key]?.size);
+    if (!activeSections.length) return base;
+
+    return base.filter((associate) => {
+      const haystackParts = [
+        associate.title,
+        associate.summary,
+        associate.location,
+        associate.bio,
+        associate.focus,
+        associate.practice,
+        associate.user?.email,
+        (associate.specialisations || []).join(" "),
+        (associate.skills || []).join(" "),
+        (associate.expertise || []).join(" "),
+        (associate.tags || []).join(" "),
+        (associate.pastProjects || []).join(" "),
+      ]
+        .filter(Boolean)
+        .map((value) => String(value).toLowerCase());
+      if (!haystackParts.length) return false;
+      return activeSections.every((section) => {
+        const set = filters[section];
+        if (!set || set.size === 0) return true;
+        return Array.from(set).some((option) => {
+          const needle = option.toLowerCase();
+          return haystackParts.some((part) => part.includes(needle));
+        });
+      });
+    });
+  }, [associates, query, selectedSpecialisation, filters, hasActiveFilters]);
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
       <RegistrStrip />
-  <main className="flex-1 max-w-6xl mx-auto px-4 py-10 space-y-8">
+      <main className="flex-1 max-w-7xl mx-auto px-4 lg:px-6 py-10 w-full">
+        <div className="flex flex-col lg:flex-row gap-8 items-start">
+          <aside className="order-1 lg:order-none w-full lg:w-72 flex-shrink-0 space-y-4 lg:sticky lg:top-24">
+            <FiltersPanel
+              selected={filters}
+              onToggle={handleFilterToggle}
+              onClear={handleClearFilters}
+              sections={ASSOCIATE_FILTER_SECTIONS}
+              variant="light"
+            />
+          </aside>
+          <div className="flex-1 space-y-8 order-2 lg:order-none">
         <section className="flex flex-col md:flex-row gap-3 md:items-center">
           <input
             value={query}
@@ -240,6 +343,12 @@ const Associates = () => {
                       >
                         Book discovery call
                       </button>
+                      <button
+                        onClick={() => handleToggleWishlist(associate)}
+                        className="px-4 py-2.5 rounded-lg border border-slate-200 text-sm font-medium text-slate-700 hover:border-slate-300 transition"
+                      >
+                        {isAssociateWishlisted(associate) ? "Remove from wishlist" : "Save to wishlist"}
+                      </button>
                       <Link
                         to="/associateportfolio"
                         state={{ associate }}
@@ -259,6 +368,8 @@ const Associates = () => {
             No associates found. Try a different role or keyword.
           </div>
         )}
+          </div>
+        </div>
       </main>
 
       <Footer />
@@ -267,5 +378,7 @@ const Associates = () => {
 };
 
 export default Associates;
+
+
 
 

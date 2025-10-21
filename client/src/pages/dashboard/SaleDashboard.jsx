@@ -1,4 +1,4 @@
-﻿import { useState } from "react";
+import { useState } from "react";
 import {
   DollarSign,
   Package,
@@ -84,7 +84,7 @@ export default function VendorDashboard() {
             <h2 className="text-lg font-semibold capitalize">{activeView}</h2>
           </div>
           <img
-            src="https://via.placeholder.com/40"
+            src="https://placehold.co/40x40"
             alt="Profile"
             className="w-10 h-10 rounded-full border border-gray-200"
           />
@@ -129,7 +129,7 @@ function OverviewView() {
                 <li key={t.id} className="flex justify-between items-center">
                   <div>
                     <p className="font-medium">{t.material}</p>
-                    <p className="text-gray-500">{t.client} ù {t.id}</p>
+                    <p className="text-gray-500">{t.client} � {t.id}</p>
                   </div>
                   <span
                     className={`text-xs px-3 py-1 rounded-xl font-semibold ${

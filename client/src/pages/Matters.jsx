@@ -11,12 +11,10 @@ const MattersViewport = () => {
     const el = containerRef.current;
     if (!el) return;
     el.dataset.theme = theme;
-    if (theme === "light") {
-      el.classList.add("light");
-      el.classList.remove("dark");
-    } else {
+    if (theme === "dark") {
       el.classList.add("dark");
-      el.classList.remove("light");
+    } else {
+      el.classList.remove("dark");
     }
   }, [theme]);
 

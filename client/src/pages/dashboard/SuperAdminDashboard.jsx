@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Search,
@@ -26,7 +26,7 @@ const sidebarItems = [
 
 const formatCurrency = (amount, currency = "USD") => {
   const value = Number(amount);
-  if (!Number.isFinite(value)) return "ΓÇö";
+  if (!Number.isFinite(value)) return "G��";
   try {
     return new Intl.NumberFormat(undefined, {
       style: "currency",
@@ -39,9 +39,9 @@ const formatCurrency = (amount, currency = "USD") => {
 };
 
 const formatDate = (input) => {
-  if (!input) return "ΓÇö";
+  if (!input) return "G��";
   const d = new Date(input);
-  if (Number.isNaN(d.getTime())) return "ΓÇö";
+  if (Number.isNaN(d.getTime())) return "G��";
   return d.toLocaleDateString(undefined, {
     year: "numeric",
     month: "short",
@@ -252,7 +252,7 @@ export default function SuperAdminDashboard({ onLogout }) {
             </button>
             <span className="text-sm text-gray-600 hidden sm:block">Super Admin</span>
             <img
-              src="https://via.placeholder.com/40"
+              src="https://placehold.co/40x40"
               alt="Profile"
               className="w-10 h-10 rounded-full border border-gray-200"
             />
@@ -275,26 +275,26 @@ function DashboardView({ stats, products, loading, error }) {
       key: "users",
       icon: <Users />,
       title: "Users",
-      description: loading ? "LoadingΓÇª" : `${stats?.totalUsers ?? 0} total users`,
+      description: loading ? "LoadingGǪ" : `${stats?.totalUsers ?? 0} total users`,
     },
     {
       key: "firms",
       icon: <Building2 />,
       title: "Firms",
-      description: loading ? "LoadingΓÇª" : `${stats?.totalFirms ?? 0} partner firms`,
+      description: loading ? "LoadingGǪ" : `${stats?.totalFirms ?? 0} partner firms`,
     },
     {
       key: "products",
       icon: <ShoppingCart />,
       title: "Published Listings",
-      description: loading ? "LoadingΓÇª" : `${stats?.publishedProducts ?? 0} live products`,
+      description: loading ? "LoadingGǪ" : `${stats?.publishedProducts ?? 0} live products`,
     },
     {
       key: "revenue",
       icon: <DollarSign />,
       title: "Potential Revenue",
       description: loading
-        ? "LoadingΓÇª"
+        ? "LoadingGǪ"
         : formatCurrency(stats?.totalRevenue ?? 0, products[0]?.currency || "USD"),
     },
     {
@@ -302,7 +302,7 @@ function DashboardView({ stats, products, loading, error }) {
       icon: <Briefcase />,
       title: "Categories",
       description: loading
-        ? "LoadingΓÇª"
+        ? "LoadingGǪ"
         : `${stats?.categories?.length ?? 0} active categories`,
     },
   ];
@@ -331,7 +331,7 @@ function DashboardView({ stats, products, loading, error }) {
         <h2 className="text-xl font-semibold mb-4">Latest Marketplace Listings</h2>
         <div className="bg-white border border-gray-200 rounded-xl divide-y">
           {loading ? (
-            <div className="px-4 py-6 text-sm text-gray-500">Loading listingsΓÇª</div>
+            <div className="px-4 py-6 text-sm text-gray-500">Loading listingsGǪ</div>
           ) : latestProducts.length === 0 ? (
             <div className="px-4 py-6 text-sm text-gray-500">
               No listings available yet. Seed data to see products here.
@@ -374,7 +374,7 @@ function UsersView({ search, users, loading }) {
   return (
     <Section title="User Management">
       {loading ? (
-        <div className="text-sm text-gray-500">Loading user listΓÇª</div>
+        <div className="text-sm text-gray-500">Loading user listGǪ</div>
       ) : filtered.length === 0 ? (
         <EmptySearchNotice term={search} />
       ) : (
@@ -411,12 +411,12 @@ function AssociatesView({ search, users, loading }) {
   return (
     <Section title="Associates">
       {loading ? (
-        <div className="text-sm text-gray-500">Loading associatesΓÇª</div>
+        <div className="text-sm text-gray-500">Loading associatesGǪ</div>
       ) : filtered.length === 0 ? (
         <div className="text-sm text-gray-500">
           {associates.length === 0
             ? "No associates onboarded yet."
-            : `No associates found for ΓÇ£${search}ΓÇ¥.`}
+            : `No associates found for Gǣ${search}Gǥ.`}
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -448,7 +448,7 @@ function FirmsView({ search, firms, loading }) {
   return (
     <Section title="Firms">
       {loading ? (
-        <div className="text-sm text-gray-500">Loading firmsΓÇª</div>
+        <div className="text-sm text-gray-500">Loading firmsGǪ</div>
       ) : filtered.length === 0 ? (
         <EmptySearchNotice term={search} />
       ) : (
@@ -484,12 +484,12 @@ function ClientsView({ search, users, loading }) {
   return (
     <Section title="Clients">
       {loading ? (
-        <div className="text-sm text-gray-500">Loading clientsΓÇª</div>
+        <div className="text-sm text-gray-500">Loading clientsGǪ</div>
       ) : filtered.length === 0 ? (
         <div className="text-sm text-gray-500">
           {clients.length === 0
             ? "No clients have registered yet."
-            : `No clients found for ΓÇ£${search}ΓÇ¥.`}
+            : `No clients found for Gǣ${search}Gǥ.`}
         </div>
       ) : (
         <Table
@@ -516,7 +516,7 @@ function MarketplaceView({ search, products, loading }) {
   return (
     <Section title="Marketplace Listings">
       {loading ? (
-        <div className="text-sm text-gray-500">Loading listingsΓÇª</div>
+        <div className="text-sm text-gray-500">Loading listingsGǪ</div>
       ) : filtered.length === 0 ? (
         <EmptySearchNotice term={search} />
       ) : (

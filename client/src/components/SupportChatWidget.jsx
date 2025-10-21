@@ -22,6 +22,12 @@ const SupportChatWidget = () => {
     };
   }, []);
 
+  useEffect(() => {
+    const handleOpen = () => setIsOpen(true);
+    window.addEventListener("support-chat:open", handleOpen);
+    return () => window.removeEventListener("support-chat:open", handleOpen);
+  }, []);
+
   const handleSend = () => {
     const trimmed = message.trim();
     if (!trimmed || isSending) return;
@@ -68,10 +74,10 @@ const SupportChatWidget = () => {
             </div>
             <button
               onClick={() => setIsOpen(false)}
-              className="text-lg leading-none text-slate-300 hover:text-white"
-              aria-label="Close support chat"
+              className="text-xl leading-none text-slate-300 hover:text-white"
+              aria-label="Minimize support chat"
             >
-              A-
+              &minus;
             </button>
           </header>
 

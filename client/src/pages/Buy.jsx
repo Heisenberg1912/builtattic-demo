@@ -1,11 +1,22 @@
 import React from "react";
 import { useParams } from "react-router-dom";
+import { toast } from "react-hot-toast";
 
 const Buy = () => {
   const { id } = useParams();
+  const DEMO_MESSAGE =
+    "This is a demo, we are unable to serve you right now, apologies for the inconvenience caused!";
+
+  const handleBuyNow = () => {
+    toast(DEMO_MESSAGE, { duration: 4000, style: { maxWidth: "420px" } });
+  };
+
   return (
     <div className="h-[89vh] bg-white flex flex-col items-center justify-center px-4 py-8">
       <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-8 flex flex-col items-center">
+        <div className="w-full mb-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 text-center">
+          {DEMO_MESSAGE}
+        </div>
         <img
           src={`https://via.placeholder.com/200?text=Item+${id}`}
           alt={`Item ${id}`}
@@ -42,7 +53,10 @@ const Buy = () => {
         </div>
 
         {/* Buy Now Button */}
-        <button className="w-full py-3 bg-black text-white rounded-xl font-semibold text-lg shadow hover:bg-gray-800 transition mb-4">
+        <button
+          className="w-full py-3 bg-black text-white rounded-xl font-semibold text-lg shadow hover:bg-gray-800 transition mb-4"
+          onClick={handleBuyNow}
+        >
           Buy Now
         </button>
 

@@ -1,4 +1,4 @@
-import 'dotenv/config.js';
+import '../config/hardcodedEnv.js';
 import mongoose from 'mongoose';
 import User from '../models/userModel.js';
 

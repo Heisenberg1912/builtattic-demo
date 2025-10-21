@@ -31,6 +31,7 @@ This project is now configured to run as a single container on Google Cloud Run,
    The new bootstrapping code pulls only secrets that are not already present as environment variables, so local overrides still work.
 
 3. Configure non-secret values (e.g., `CORS_ORIGIN`, `LOG_LEVEL`) as standard environment variables on Cloud Run.
+4. Set `API_BASE_URL` to the HTTPS origin of your Cloud Run deployment (for example `https://builtattic-xyz-uc.a.run.app`). The server will append `/api` if missing and uses this value when issuing secure download links in fulfilment emails.
 
 ## 3. Building & Running Locally
 
@@ -87,7 +88,7 @@ Or create a trigger tied to your main branch.
 
 ## 8. Frontend Hosting Options
 
-By default the Express server serves the built React bundle. Alternatives:
+By default the Express server serves the built React bundle. The client build now falls back to the same-origin `/api` endpoint when no Vite env vars are provided, so a single Cloud Run service works out of the box. Alternatives:
 
 1. Host the bundle on Cloud Storage + Cloud CDN, set `SERVE_CLIENT_FROM_API=false`, and point your frontend to the API domain.
 2. Split deployments: one Cloud Run service for API, one for SSR/client if needed.

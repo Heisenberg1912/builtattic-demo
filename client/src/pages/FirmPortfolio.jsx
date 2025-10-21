@@ -1,5 +1,5 @@
 import React from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import Footer from "../components/Footer";
 import { HiOutlineHeart, HiHeart } from "react-icons/hi2";
 import { FiGlobe, FiLock, FiPenTool } from "react-icons/fi";
@@ -9,10 +9,8 @@ import { useWishlist } from "../context/WishlistContext";
 
 const FirmPortfolio = () => {
   const location = useLocation();
-  const navigate = useNavigate();
   const { addToCart } = useCart();
-  const wishlistContext = useWishlist?.();
-  const { addToWishlist, removeFromWishlist, isInWishlist } = wishlistContext || {};
+  const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
 
   // Parse query params to get firm details
   const params = new URLSearchParams(location.search);
@@ -59,27 +57,42 @@ const FirmPortfolio = () => {
   }
 
   // Create item data structure for both cart and wishlist
-  const getItemData = () => ({
-    id: block._id || "firm-" + String(block.title || "item").replace(/\s+/g, "-").toLowerCase(),
-    title: block.title,
-    studio: block.studio,
-    image: block.cover,
-    price: `$${block.price}`,
-    category: "Firm",
-    style: block.style,
-    material: "Various",
-    bedrooms: Number(block.rooms) || 0,
-    bathrooms: Math.floor(Number(block.rooms || 0) / 2) || 0,
-    area: Number(block.plotSize) || 0,
-    features: [block.features, block.amenities].filter(Boolean),
-    description: block.description,
-    gallery: [block.cover],
-    logo: block.logo,
-  });
+  const getItemData = () => {
+    const parsePrice = (value) => {
+      const numeric = Number(value);
+      if (Number.isFinite(numeric)) return numeric;
+      const parsed = parseFloat(String(value || "").replace(/[^0-9.-]+/g, ""));
+      return Number.isFinite(parsed) ? parsed : 0;
+    };
+    const id =
+      block._id ||
+      `firm-${String(block.title || "item").replace(/\s+/g, "-").toLowerCase()}`;
+    return {
+      id,
+      productId: id,
+      title: block.title,
+      studio: block.studio,
+      image: block.cover,
+      price: parsePrice(block.price),
+      category: "Firm",
+      style: block.style,
+      material: "Various",
+      bedrooms: Number(block.rooms) || 0,
+      bathrooms: Math.floor(Number(block.rooms || 0) / 2) || 0,
+      area: Number(block.plotSize) || 0,
+      features: [block.features, block.amenities].filter(Boolean),
+      description: block.description,
+      gallery: [block.cover],
+      logo: block.logo,
+      seller: block.seller?.name || block.studio,
+      source: "Firm",
+      kind: "studio",
+    };
+  };
 
-  const handleAddToCart = () => {
+  const handleAddToCart = async () => {
     try {
-      addToCart(getItemData());
+      await addToCart(getItemData());
       toast.success("Added to cart!");
     } catch (e) {
       console.error(e);
@@ -87,10 +100,13 @@ const FirmPortfolio = () => {
     }
   };
 
-  const handleBuyNow = () => {
+  const handleBuyNow = async () => {
     try {
-      addToCart(getItemData());
-      navigate("/cart");
+      await addToCart(getItemData());
+      toast("This is a demo, we are unable to serve you right now, apologies for the inconvenience caused!", {
+        duration: 4000,
+        style: { maxWidth: "420px" },
+      });
     } catch (e) {
       console.error(e);
       toast.error("Failed to add to cart");
@@ -99,16 +115,16 @@ const FirmPortfolio = () => {
 
   // Check if item is in wishlist
   const itemId = getItemData().id;
-  const itemInWishlist = isInWishlist ? isInWishlist(itemId) : false;
+  const itemInWishlist = isInWishlist(itemId);
 
-  const handleToggleWishlist = () => {
+  const handleToggleWishlist = async () => {
     try {
       const itemData = getItemData();
       if (itemInWishlist) {
-        removeFromWishlist?.(itemData.id);
+        await removeFromWishlist(itemData);
         toast.success("Removed from wishlist");
       } else {
-        addToWishlist?.(itemData);
+        await addToWishlist(itemData);
         toast.success("Added to wishlist!");
       }
     } catch (e) {

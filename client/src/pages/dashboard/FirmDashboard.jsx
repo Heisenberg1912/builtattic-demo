@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Building2,
   Users,
@@ -23,7 +23,7 @@ const sidebarItems = [
 
 const formatCurrency = (amount, currency = "USD") => {
   const value = Number(amount);
-  if (!Number.isFinite(value)) return "ΓÇö";
+  if (!Number.isFinite(value)) return "G��";
   try {
     return new Intl.NumberFormat(undefined, {
       style: "currency",
@@ -36,9 +36,9 @@ const formatCurrency = (amount, currency = "USD") => {
 };
 
 const formatDate = (input) => {
-  if (!input) return "ΓÇö";
+  if (!input) return "G��";
   const d = new Date(input);
-  if (Number.isNaN(d.getTime())) return "ΓÇö";
+  if (Number.isNaN(d.getTime())) return "G��";
   return d.toLocaleDateString(undefined, {
     year: "numeric",
     month: "short",
@@ -182,7 +182,7 @@ export default function FirmDashboard() {
             <h2 className="text-lg font-semibold capitalize">{activeView}</h2>
           </div>
           <img
-            src="https://via.placeholder.com/40"
+            src="https://placehold.co/40x40"
             alt="Profile"
             className="w-10 h-10 rounded-full border border-gray-200"
           />
@@ -206,28 +206,28 @@ function OverviewView({ firm, products, loading, error, totals, currency }) {
       <>
         <section className="mb-8">
         <h2 className="text-2xl font-bold mb-4">
-          {firm?.name ? `Welcome, ${firm.name} ≡ƒæï` : "Welcome back ≡ƒæï"}
+          {firm?.name ? `Welcome, ${firm.name} =���` : "Welcome back =���"}
         </h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <StatCard
             icon={<Briefcase />}
             label="Published Designs"
-            value={loading ? "ΓÇª" : totals.publishedCount}
+            value={loading ? "GǪ" : totals.publishedCount}
           />
           <StatCard
             icon={<UserCheck />}
             label="Drafts"
-            value={loading ? "ΓÇª" : Math.max(draftCount, 0)}
+            value={loading ? "GǪ" : Math.max(draftCount, 0)}
           />
           <StatCard
             icon={<DollarSign />}
             label="Catalog Value"
-            value={loading ? "ΓÇª" : formatCurrency(totals.totalValue, currency)}
+            value={loading ? "GǪ" : formatCurrency(totals.totalValue, currency)}
           />
           <StatCard
             icon={<ShoppingCart />}
             label="Listings"
-            value={loading ? "ΓÇª" : totals.totalProducts}
+            value={loading ? "GǪ" : totals.totalProducts}
           />
         </div>
         {error && (
@@ -241,7 +241,7 @@ function OverviewView({ firm, products, loading, error, totals, currency }) {
         <h2 className="text-xl font-semibold mb-4">Active Listings</h2>
         <div className="bg-gray-50 border border-gray-200 rounded-xl p-6 space-y-4">
           {loading ? (
-            <p className="text-sm text-gray-500">Loading listingsΓÇª</p>
+            <p className="text-sm text-gray-500">Loading listingsGǪ</p>
           ) : latestProducts.length === 0 ? (
             <p className="text-sm text-gray-500">
               No designs published yet. Upload your first design to get started.
@@ -280,11 +280,11 @@ function OverviewView({ firm, products, loading, error, totals, currency }) {
         <h2 className="text-xl font-semibold mb-4">Latest Activity</h2>
         <div className="bg-gray-50 border border-gray-200 rounded-xl p-6 space-y-3 text-sm text-gray-700">
           {loading ? (
-            <p>Checking for recent activityΓÇª</p>
+            <p>Checking for recent activityGǪ</p>
           ) : latestProducts.length ? (
             latestProducts.map((product) => (
               <p key={product._id || product.slug}>
-                ≡ƒÜÇ <strong>{product.title}</strong> updated{" "}
+                =��� <strong>{product.title}</strong> updated{" "}
                 {formatDate(product.updatedAt || product.createdAt)}.
               </p>
             ))
@@ -331,7 +331,7 @@ function EmployeesView({ owner, firm }) {
                 <div>
                   <p className="font-medium text-base">{member.name}</p>
                   <p className="text-gray-500 capitalize">
-                    {member.role} ΓÇó {member.firm}
+                    {member.role} G�� {member.firm}
                   </p>
                 </div>
                 <span className="px-3 py-1 rounded-xl text-xs font-semibold bg-green-100 text-green-700">
@@ -361,7 +361,7 @@ function ProjectsView({ products, loading, currency }) {
       <h2 className="text-2xl font-bold mb-4">Marketplace Projects</h2>
       <div className="space-y-4">
         {loading ? (
-          <p className="text-sm text-gray-500">Loading projectsà</p>
+          <p className="text-sm text-gray-500">Loading projects�</p>
         ) : items.length === 0 ? (
           <p className="text-sm text-gray-500">
             No projects yet. Upload designs to populate your marketplace catalogue.
@@ -413,13 +413,13 @@ function EarningsView({ products, loading, currency, totals }) {
         <div className="bg-gray-800 text-white p-6 rounded-xl">
           <p className="text-gray-300 text-sm">Total Catalog Value</p>
           <p className="text-3xl font-bold mt-2">
-            {loading ? "à" : formatCurrency(totals.totalValue, currency)}
+            {loading ? "�" : formatCurrency(totals.totalValue, currency)}
           </p>
         </div>
         <div className="lg:col-span-2 bg-gray-50 border rounded-xl p-6">
           <h3 className="font-semibold mb-4">Recent Published Listings</h3>
           {loading ? (
-            <p className="text-sm text-gray-500">Loading transactionsà</p>
+            <p className="text-sm text-gray-500">Loading transactions�</p>
           ) : transactions.length === 0 ? (
             <p className="text-sm text-gray-500">
               Publish a design to start tracking earnings.
@@ -456,7 +456,7 @@ function NotificationsView({ products, loading }) {
       <h2 className="text-2xl font-bold mb-4">Notifications</h2>
       <div className="bg-gray-50 border rounded-xl p-6 space-y-4">
         {loading ? (
-          <p className="text-sm text-gray-500">Checking activityà</p>
+          <p className="text-sm text-gray-500">Checking activity�</p>
         ) : updates.length === 0 ? (
           <p className="text-sm text-gray-500">
             No notifications yet. Publish a design to see updates here.

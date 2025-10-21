@@ -23,34 +23,41 @@ const ANALYSIS_FIELDS = [
 const genAI = GEMINI_API_KEY ? new GoogleGenerativeAI(GEMINI_API_KEY) : null;
 
 export async function runAnalyzeAndGenerate(prompt, options = {}) {
-  const { analysis, promptAnalysis, designAnalysis, source, warning } = await getAnalysis(prompt, options);
+  const { analysis, promptAnalysis, designAnalysis, source, warning } =
+    await getAnalysis(prompt, options);
 
   let imagePayload = null;
+  let imageWarning;
+
   if (genAI && source === "gemini") {
     try {
       imagePayload = await generateImageWithGemini(prompt, analysis);
     } catch (err) {
       console.warn("image_generation_failed", err);
+      imageWarning = err?.message || "Gemini image generation failed";
     }
+  } else if (!genAI) {
+    imageWarning = "Gemini image generation disabled; API key missing";
   }
 
-  if (!imagePayload) {
-    const err = new Error("image_generation_unavailable");
-    err.status = 503;
-    throw err;
+  if (!imagePayload && genAI && source === "gemini" && !imageWarning) {
+    imageWarning = "Gemini image generation unavailable";
   }
 
-  if (imagePayload.base64 && !imagePayload.imageUrl) {
+  if (imagePayload?.base64 && !imagePayload.imageUrl) {
     imagePayload.imageUrl = `data:${imagePayload.mime || "image/png"};base64,${imagePayload.base64}`;
   }
+
+  const warnings = [warning, imageWarning].filter(Boolean);
 
   return {
     analysis,
     promptAnalysis,
     designAnalysis,
     source,
-    ...(warning ? { warning } : {}),
-    ...imagePayload,
+    ...(warnings.length ? { warning: warnings.join(" | ") } : {}),
+    ...(imagePayload ?? {}),
+    imageAvailable: Boolean(imagePayload),
   };
 }
 

@@ -1,7 +1,7 @@
-# Builtattic Backend
+﻿# Builtattic Backend
 
 ## Setup
-1. Copy `.env.example` to `.env` and fill secrets.
+1. Configuration values live in `src/config/hardcodedEnv.js`; adjust them there if needed.
 2. `cd server`
 3. `npm install`
 4. `npm run dev`
@@ -33,4 +33,4 @@ CORS_ORIGIN supports comma separated list e.g. http://localhost:3000,http://loca
 Main entry: src/index.js
 Run: npm run dev
 
-Default port: 4500 (set PORT in .env to override)
+Default port: 5000 (adjust in src/config/hardcodedEnv.js if required)

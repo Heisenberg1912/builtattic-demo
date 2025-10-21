@@ -853,6 +853,16 @@ const ProductList = () => {
                           >
                             Add to cart
                           </button>
+                          <button
+                            onClick={(event) => {
+                              event.preventDefault();
+                              event.stopPropagation();
+                              handleToggleWishlist(product);
+                            }}
+                            className="px-4 py-2.5 rounded-lg border border-slate-200 text-sm font-medium text-slate-700 hover:border-slate-300 transition"
+                          >
+                            {isInWishlist(product._id) ? "Remove from wishlist" : "Add to wishlist"}
+                          </button>
                           <Link
                             to={`/products/${product.slug || product._id}`}
                             onClick={() => handleProductClick(product)}

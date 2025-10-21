@@ -1,12 +1,17 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { toast } from "react-hot-toast";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import Footer from "../components/Footer";
+import { useCart } from "../context/CartContext";
+import { useWishlist } from "../context/WishlistContext";
 import { fetchMaterials } from "../services/marketplace.js";
 import { fallbackMaterials } from "../data/marketplace.js";
 
 const WarehouseDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { addToCart } = useCart();
+  const { addToWishlist, removeFromWishlist, wishlistItems = [] } = useWishlist();
   const [material, setMaterial] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -105,6 +110,63 @@ const WarehouseDetail = () => {
       </div>
     );
   }
+
+  const materialKey = material?._id ?? material?.id ?? material?.slug ?? id;
+  const isWishlisted = useMemo(
+    () =>
+      (wishlistItems || []).some(
+        (entry) => (entry?.productId ?? entry?.id ?? entry?._id ?? entry?.slug) === materialKey,
+      ),
+    [wishlistItems, materialKey],
+  );
+
+  const handleAddMaterialToCart = async () => {
+    if (!material) return;
+    const price = Number(material.priceSqft ?? material.pricing?.basePrice ?? material.price ?? 0);
+    try {
+      await addToCart({
+        productId: materialKey,
+        title: material.title,
+        image: material.heroImage || material.images?.[0] || "",
+        price,
+        quantity: 1,
+        seller: material.metafields?.vendor || "Marketplace vendor",
+        source: "Material",
+        kind: "material",
+        metadata: {
+          category: material.category,
+          unit: material.pricing?.unit || material.pricing?.unitLabel || material.metafields?.unit,
+        },
+      });
+      toast.success("Material added to cart");
+    } catch (err) {
+      console.error(err);
+      toast.error("Could not add to cart");
+    }
+  };
+
+  const handleToggleWishlist = async () => {
+    if (!material) return;
+    const payload = {
+      productId: materialKey,
+      title: material.title,
+      image: material.heroImage || material.images?.[0] || "",
+      price: Number(material.priceSqft ?? material.pricing?.basePrice ?? material.price ?? 0),
+      source: "Material",
+    };
+    try {
+      if (isWishlisted) {
+        await removeFromWishlist(payload);
+        toast.success("Removed from wishlist");
+      } else {
+        await addToWishlist(payload);
+        toast.success("Added to wishlist");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Could not update wishlist");
+    }
+  };
 
   const pricing = material.pricing || {};
   const minimumOrder =
@@ -295,9 +357,22 @@ const WarehouseDetail = () => {
                     {material.metafields?.location || "Global distribution"}
                   </p>
                 </div>
-                <button className="w-full bg-slate-900 text-white rounded-lg py-2.5 text-sm font-semibold hover:bg-slate-800">
-                  Add to cart
-                </button>
+                <div className="flex flex-col gap-2">
+                  <button
+                    type="button"
+                    onClick={handleAddMaterialToCart}
+                    className="w-full bg-slate-900 text-white rounded-lg py-2.5 text-sm font-semibold hover:bg-slate-800"
+                  >
+                    Add to cart
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleToggleWishlist}
+                    className="w-full rounded-lg border border-slate-200 py-2.5 text-sm font-medium text-slate-700 hover:border-slate-300"
+                  >
+                    {isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
+                  </button>
+                </div>
               </section>
               {material.metafields?.vendor && (
                 <section className="bg-white border border-slate-200 rounded-2xl p-6 space-y-2 text-sm text-slate-600">

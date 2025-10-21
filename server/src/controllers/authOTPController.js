@@ -1,4 +1,4 @@
-import jwt from "jsonwebtoken";
+﻿import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import User from "../models/User.js";
 import Otp from "../models/Otp.js";
@@ -25,7 +25,7 @@ function generateOtp() {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
-// Use only email and password from .env (for Gmail, Outlook, etc.)
+// Use only email and password from src/config/hardcodedEnv.js (for Gmail, Outlook, etc.)
 const transporter = nodemailer.createTransport({
   service: "gmail", // or 'outlook', 'yahoo', etc.
   auth: {
@@ -545,7 +545,7 @@ export const sendLoginOtp = async (req, res) => {
   }
 };
 
-// 1. Replace dummy SMTP config with your real SMTP credentials in .env
+// 1. Replace dummy SMTP config with your real SMTP credentials in src/config/hardcodedEnv.js
 // 2. Replace in-memory otpStore with a persistent store (DB/Redis) for production
 // 3. Ensure password is saved as passwordHash in User model
 // 4. Remove console.log of OTP in production
